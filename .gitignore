@@ -1,0 +1,7 @@
+# DroneAcharya workspace root
+Godot_*.exe
+simulator/.godot/
+simulator/android/
+**/node_modules/
+exports/
+*.tmp

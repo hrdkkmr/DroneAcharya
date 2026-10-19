@@ -1,0 +1,21 @@
+import {describe,it,expect} from 'vitest';
+import {summarizeHistory,compareRecords} from './history';
+import {historyRecord} from '../test/historyFixtures';
+import {SimulationEngine} from '../engine/SimulationEngine';
+import {testConfig} from '../test/fixtures';
+const ids=(records:ReturnType<typeof historyRecord>[])=>new Set(records.map(s=>s.id));
+describe('truthful descriptive historical analytics',()=>{
+  it('keeps empty denominators and means null rather than creating dummy history',()=>{const s=summarizeHistory([],new Set());expect(s.eligible).toBe(0);expect(s.meanScore).toBeNull();expect(s.detection.mean).toBeNull();expect(s.reporting.mean).toBeNull();expect(s.trend).toEqual([]);expect(Object.values(s.components).every(n=>n===null)).toBe(true);});
+  it('uses only actual acknowledged saved/completed/comparable records, not unsaved or aborted scores',()=>{const a=historyRecord('perfect'),b=historyRecord('unknown','unknown'),c=historyRecord('abort','aborted'),d=historyRecord('unsaved');const s=summarizeHistory([a,b,c,d],ids([a,b,c]));expect(s.saved).toBe(3);expect(s.eligible).toBe(2);expect(s.aborted).toBe(1);expect(s.meanScore).toBe((a.evaluation.score+b.evaluation.score)/2);expect(s.trend).toHaveLength(2);});
+  it('excludes actual completed/no-delivery evidence and explicitly counts it',()=>{
+    let record:ReturnType<typeof historyRecord>|undefined;
+    for(let seed=1;seed<=64;seed++){const e=new SimulationEngine(testConfig({reliability:0.35,lighting:'night',weather:'rain',difficulty:5,seed}),{sessionId:`none-${seed}`,profileId:'trainee-01',startedAt:'2026-10-17T10:00:00.000Z'},()=>'2026-10-17T10:01:00.000Z');e.start();e.advance(60);const candidate=e.completedRecord();if(!candidate.evaluation.comparable){record=candidate;break;}}
+    expect(record).toBeDefined();expect(record!.events.some(e=>e.type==='observation')).toBe(false);const s=summarizeHistory([record!],ids([record!]));expect(s.noncomparable).toBe(1);expect(s.eligible).toBe(0);expect(s.meanScore).toBeNull();
+  });
+  it('filters by anonymous profile without leaking another profile into its sample size',()=>{const a=historyRecord('a'),b=historyRecord('b','perfect','trainee-02');expect(summarizeHistory([a,b],ids([a,b]),'trainee-01').eligible).toBe(1);expect(summarizeHistory([a,b],ids([a,b]),'absent').saved).toBe(0);});
+  it('weights unit means by actual eligible attempts, not an average of unequal profile means',()=>{const a=historyRecord('a'),b=historyRecord('b','unknown'),c=historyRecord('c','none','trainee-02');const rows=[a,b,c];const s=summarizeHistory(rows,ids(rows));expect(s.eligible).toBe(3);expect(s.meanScore).toBe(rows.reduce((total,r)=>total+r.evaluation.score,0)/3);expect(summarizeHistory(rows,ids(rows),'trainee-01').eligible).toBe(2);});
+  it('does not turn missing detections/reports into an artificially fast zero latency',()=>{const good=historyRecord('a'),none=historyRecord('b','none');const s=summarizeHistory([good,none],ids([good,none]));expect(s.detection.n).toBe(1);expect(s.detection.missing).toBeGreaterThan(0);expect(s.reporting.n).toBe(1);expect(s.reporting.missing).toBeGreaterThan(0);expect(s.reporting.mean).toBe(4);});
+  it('computes actual component means and difficulty denominators with no fake zero buckets',()=>{const a=historyRecord();const s=summarizeHistory([a],ids([a]));expect(s.components.detection).toBe(a.evaluation.metrics[0].score);expect(s.difficulties.reduce((n,d)=>n+d.n,0)).toBe(1);expect(s.difficulties.find(d=>d.n===0)?.mean).toBeNull();});
+  it('orders a bounded renderer-independent actual chronological trend deterministically',()=>{const a=historyRecord('z'),b=historyRecord('a');expect(summarizeHistory([a,b],ids([a,b])).trend.map(s=>s.id)).toEqual(['a','z']);});
+  it('does not compare aborted/no-evidence scores and labels condition changes instead of normalized improvement',()=>{const a=historyRecord('a'),b=historyRecord('b','unknown'),c=historyRecord('c','aborted');expect(compareRecords(a,b).delta).toBe(b.evaluation.score-a.evaluation.score);expect(compareRecords(a,c).canCompare).toBe(false);expect(compareRecords(a,c).delta).toBeNull();const changed=structuredClone(b);changed.scenario.config.difficulty=5;expect(compareRecords(a,changed).differentConditions).toBe(true);});
+});

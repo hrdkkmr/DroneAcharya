@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "startedAt": "2026-10-17T14:25:23.782Z",
+  "finishedAt": "2026-10-17T14:25:55.469Z",
+  "base": "http://127.0.0.1:8787",
+  "browser": "156.0.8078.4",
+  "recordIds": [
+    "652c69eb-7408-4e18-aef2-f55066de5024",
+    "ab0afda3-1960-4e13-8203-226a23f2b212"
+  ],
+  "scores": [
+    0,
+    0
+  ],
+  "eventCounts": [
+    17,
+    17
+  ],
+  "offlineActualCompletions": 2,
+  "explicitNextBriefingWithoutAutoStart": true,
+  "actualSourceConfigPreserved": true,
+  "nativeIndexedDBExactRecordAgreement": true,
+  "reloadedLatestId": "ab0afda3-1960-4e13-8203-226a23f2b212",
+  "actualReplayCountsAgree": true,
+  "networkOrigins": [
+    "http://127.0.0.1:8787"
+  ],
+  "assetUrls": [
+    "http://127.0.0.1:8787/assets/index-rh3tkfy9.js",
+    "http://127.0.0.1:8787/assets/index-48Timya1.css",
+    "http://127.0.0.1:8787/assets/simulation.worker-DUgXOd5k.js"
+  ],
+  "pageErrors": [],
+  "badResponses": [],
+  "payloadNote": "Executed against an extracted provisional archive on the Node/POSIX host, without node_modules. This verifies the executable payload; final clean-source ZIP is independently inventoried/launched and has its own external receipt.",
+  "testedAssetSha256": {
+    "index-48Timya1.css": "27dcf7f4a8e1216ed17081ff8b69ab328982e28c951809bf904a4a3ecb8e4cba",
+    "index-rh3tkfy9.js": "fd85088a954059cefe6417ca41f3aa7183b64c21e2511ee340f471a90bf64698",
+    "simulation.worker-DUgXOd5k.js": "26cf3a140eccf9e66182576873a87a7ce86b8973244afb3d0ac5a3db972ee162"
+  }
+}

@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+*.tsbuildinfo
+.env*
+!.env.example
+
+# Local tool and browser caches
+.cache/
+.npm/
+.arena/
+.local/
+.sudo_as_admin_successful
+
+# Packaged handoff artifacts (generated from committed source)
+deliverables/

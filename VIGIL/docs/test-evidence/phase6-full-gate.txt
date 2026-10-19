@@ -1,0 +1,255 @@
+PHASE 6 POST-FRESHNESS FINAL APPLICATION GATE — 2026-10-17T14:41:44Z
+v20.20.2
+10.8.2
+
+> vigil-training@1.0.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /home/user
+
+ ✓ src/App.test.tsx (16 tests) 3610ms
+     ✓ renders honest zero-history home and a clearly labelled preview  320ms
+     ✓ configures a selected scenario and carries validated values into the briefing  524ms
+     ✓ rejects invalid configuration without leaving the lab  316ms
+     ✓ opens instructor options and validates the total weight  409ms
+     ✓ adds an actual local anonymous profile and rejects duplicates  427ms
+ ✓ src/components/SessionReport.test.tsx (10 tests) 2675ms
+     ✓ renders the fixed evaluator result and a genuinely empty replay start  413ms
+     ✓ P1/P2 links use exact action order: earlier assessment does not contain the later report  427ms
+     ✓ supports keyboard event stepping at the same second and time scrubbing without retrospective state  371ms
+     ✓ switching records resets replay and never applies a longer previous cursor to an empty result  304ms
+ ✓ src/engine/variation.test.ts (32 tests) 1783ms
+     ✓ keeps many-seed extreme paths and observations finite, timed and within documented bounds  1041ms
+     ✓ generates genuine out-of-capture-order arrivals and retains newest-capture snapshots  595ms
+ ✓ src/components/ScenarioEvidence.test.tsx (8 tests) 975ms
+     ✓ rejects an impossible pattern/count and preserves a corrected grouped briefing  697ms
+ ✓ src/hooks/workspacePersistence.test.tsx (16 tests) 547ms
+ ✓ src/components/NextPractice.test.tsx (9 tests) 342ms
+ ✓ src/replay/replay.test.ts (30 tests) 280ms
+ ✓ src/persistence/validation.test.ts (28 tests) 265ms
+ ✓ src/adaptive/policy.test.ts (36 tests) 255ms
+ ✓ src/persistence/HistoryStore.test.ts (13 tests) 221ms
+ ✓ src/components/ConfirmDialog.test.tsx (3 tests) 181ms
+ ✓ src/persistence/repository.test.ts (13 tests) 198ms
+ ✓ src/scoring/audit.test.ts (41 tests) 130ms
+ ✓ src/analytics/history.test.ts (9 tests) 104ms
+ ✓ src/scoring/evaluate.test.ts (26 tests) 96ms
+ ✓ src/engine/engine.test.ts (27 tests) 80ms
+ ✓ src/hooks/useRecordedReplay.test.tsx (8 tests) 74ms
+ ✓ src/analytics/exports.test.ts (10 tests) 42ms
+ ✓ src/workers/runtime.test.ts (6 tests) 34ms
+ ✓ src/components/observationLayout.test.ts (4 tests) 28ms
+ ✓ src/domain/config.test.ts (22 tests) 21ms
+ ✓ src/domain/contracts.test.ts (2 tests) 5ms
+
+ Test Files  22 passed (22)
+      Tests  369 passed (369)
+   Start at  14:41:45
+   Duration  29.03s (transform 1.09s, setup 3.01s, import 2.94s, tests 11.95s, environment 8.08s)
+
+
+> vigil-training@1.0.0 test:launcher
+> node --test scripts/serve.test.mjs
+
+TAP version 13
+# Subtest: zero-dependency local prebuilt-bundle host
+    # Subtest: serves the actual HTML body without host restrictions or external resources
+    ok 1 - serves the actual HTML body without host restrictions or external resources
+      ---
+      duration_ms: 41.015876
+      ...
+    # Subtest: uses correct Worker/module MIME type and a real JS body
+    ok 2 - uses correct Worker/module MIME type and a real JS body
+      ---
+      duration_ms: 7.623496
+      ...
+    # Subtest: serves HEAD with matching byte length and no body
+    ok 3 - serves HEAD with matching byte length and no body
+      ---
+      duration_ms: 9.310111
+      ...
+    # Subtest: does not silently serve HTML for a missing asset
+    ok 4 - does not silently serve HTML for a missing asset
+      ---
+      duration_ms: 9.21269
+      ...
+    # Subtest: allows only safe read methods
+    ok 5 - allows only safe read methods
+      ---
+      duration_ms: 8.314878
+      ...
+    # Subtest: rejects malformed percent encoding and encoded backslash traversal
+    ok 6 - rejects malformed percent encoding and encoded backslash traversal
+      ---
+      duration_ms: 4.034376
+      ...
+    # Subtest: never serves a symlink outside the bundle root or source parent files
+    ok 7 - never serves a symlink outside the bundle root or source parent files
+      ---
+      duration_ms: 6.527751
+      ...
+    # Subtest: returns no-store and nosniff headers without iframe/origin blocks
+    ok 8 - returns no-store and nosniff headers without iframe/origin blocks
+      ---
+      duration_ms: 4.438358
+      ...
+    # Subtest: fails clearly when the prebuilt app is missing instead of pretending to run
+    ok 9 - fails clearly when the prebuilt app is missing instead of pretending to run
+      ---
+      duration_ms: 1.341379
+      ...
+    1..9
+ok 1 - zero-dependency local prebuilt-bundle host
+  ---
+  duration_ms: 101.374186
+  type: 'suite'
+  ...
+1..1
+# tests 9
+# suites 1
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 204.332698
+
+> vigil-training@1.0.0 build
+> tsc -b && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 1642 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                              0.61 kB │ gzip:   0.39 kB
+dist/assets/simulation.worker-DUgXOd5k.js   84.32 kB
+dist/assets/index-48Timya1.css             108.56 kB │ gzip:  22.68 kB
+dist/assets/index-BiSwf0C9.js              499.98 kB │ gzip: 148.81 kB
+✓ built in 3.95s
+found 0 vulnerabilities
+
+> vigil-training@1.0.0 test:e2e
+> playwright test --workers=2
+
+
+Running 111 tests using 2 workers
+
+  ✓    2 [desktop] › tests/e2e/adaptive.spec.ts:23:1 › empty heuristic estimates, explicit foundation briefing and manual override do not invent a result (2.8s)
+  ✓    1 [desktop] › tests/e2e/adaptive.spec.ts:28:1 › real offline completion drives a sourced plan, explicit next briefing and a second actual saved exercise (39.8s)
+  ✓    4 [desktop] › tests/e2e/adaptive.spec.ts:46:1 › live and paused attempts hide planner/competency evidence; actual abort contributes no performance (3.3s)
+  ✓    3 [desktop] › tests/e2e/adaptive.spec.ts:36:1 › three actual distinct strong attempts support one-level increase, profile isolation and real JSON reset/import replay the same plan (58.3s)
+  ✓    5 [desktop] › tests/e2e/adaptive.spec.ts:51:1 › a real unsaved completion cannot drive adaptation until native storage retry acknowledges it (20.2s)
+  ✓    6 [desktop] › tests/e2e/adaptive.spec.ts:59:1 › same-epoch peer save withholds an older planner until native reload includes the actual completed evidence (18.6s)
+  ✓    8 [desktop] › tests/e2e/exercise.spec.ts:78:1 › keyboard actions, confirmed reset and early exit preserve the correct session lifecycle (5.8s)
+  ✓    9 [desktop] › tests/e2e/exercise.spec.ts:114:1 › leaving the console pauses and locks answers/profile without overwriting the active attempt (5.2s)
+  ✓   10 [desktop] › tests/e2e/exercise.spec.ts:136:1 › a missing worker produces an explicit error, never a fictional exercise or score (938ms)
+  ✓   11 [desktop] › tests/e2e/exercise.spec.ts:146:1 › a worker transport failure freezes the real snapshot and offers explicit discard/reset (6.2s)
+  ✓    7 [desktop] › tests/e2e/exercise.spec.ts:4:1 › real offline exercise: moving evidence, decisions, degraded feed, pause and a log-matched result (35.2s)
+  ✓   12 [desktop] › tests/e2e/foundation.spec.ts:11:1 › all seven screens navigate without browser errors or horizontal overflow (2.1s)
+  ✓   13 [desktop] › tests/e2e/foundation.spec.ts:23:1 › valid configuration flows into the briefing without automatically starting the exercise (1.7s)
+  ✓   15 [desktop] › tests/e2e/foundation.spec.ts:52:1 › guide supports keyboard focus containment and Escape (1.0s)
+  ✓   14 [desktop] › tests/e2e/foundation.spec.ts:39:1 › invalid inputs produce helpful errors; corrected configuration can proceed (1.3s)
+  ✓   17 [desktop] › tests/e2e/foundation.spec.ts:82:1 › loaded shell navigates offline with no external resource requirements (1.1s)
+  ✓   18 [desktop] › tests/e2e/foundation.spec.ts:94:1 › anonymous profile management updates the workspace, without fake history (819ms)
+  ✓   19 [desktop] › tests/e2e/foundation.spec.ts:104:1 › captures the verified foundation UI (1.1s)
+  ✓   20 [desktop] › tests/e2e/foundation.spec.ts:113:1 › navigation is keyboard-accessible and the mobile drawer closes with Escape (576ms)
+  ✓   16 [desktop] › tests/e2e/foundation.spec.ts:64:1 › screen accessibility checks include all routes and expanded instructor controls (9.7s)
+  ✓   22 [desktop] › tests/e2e/history.spec.ts:41:1 › instructor profile/draft/aborted reload, reset cancel/focus, confirmed reset and real backup merge/dedup (6.3s)
+  ✓   23 [desktop] › tests/e2e/history.spec.ts:51:1 › invalid/version/tamper/orphan/conflict imports are rejected without partial writes; an empty merge never clears history (2.2s)
+  ✓   24 [desktop] › tests/e2e/history.spec.ts:58:1 › mid-write quota failure retains actual AAR/backup, excludes unsaved analytics and retries durably once (3.8s)
+  ✓   25 [desktop] › tests/e2e/history.spec.ts:65:1 › blocked IndexedDB startup permits labelled in-memory training then recovers the actual report (2.2s)
+  ✓   21 [desktop] › tests/e2e/history.spec.ts:31:1 › offline exercise saves actual report; reload preserves score/events/replay and truthful individual/unit samples (24.0s)
+  ✓   26 [desktop] › tests/e2e/history.spec.ts:69:1 › corrupt stored score is quarantined, valid sibling stays reviewable, and raw diagnostic preserves the original data (6.1s)
+  ✓   27 [desktop] › tests/e2e/history.spec.ts:76:1 › live attempt locks real private actions even if a disabled button is forced; console reset and refresh do not fabricate history (4.1s)
+  ✓   28 [desktop] › tests/e2e/history.spec.ts:82:1 › cross-tab reset epoch blocks stale writer resurrection while retaining its actual in-memory report (4.0s)
+  ✓   30 [desktop] › tests/e2e/replay.spec.ts:37:1 › real offline replay: penalty anchors, exact prefixes, ordered same-second steps and read-only pacing (32.1s)
+  ✓   29 [desktop] › tests/e2e/history.spec.ts:86:1 › two actual completions drive comparison/mean; real CSV is formula-safe and HTML/native print use the same report (37.8s)
+  ✓   32 [desktop] › tests/e2e/replay.spec.ts:68:1 › aborted before any arrival replays only its real lifecycle, including same-second empty partials (4.2s)
+  ✓   31 [desktop] › tests/e2e/replay.spec.ts:59:1 › missing significant report links to the real terminal opportunity without invented decisions (19.7s)
+  ✓   33 [desktop] › tests/e2e/replay.spec.ts:75:1 › prior replay unmounts, all answers lock during a new live attempt, and session switching resets playback (21.0s)
+  ✓   34 [desktop] › tests/e2e/variation.spec.ts:8:3 › Urban ambiguity: real distinct conditions, request provenance and full offline completion (38.7s)
+  ✓   35 [desktop] › tests/e2e/variation.spec.ts:8:3 › Nightfall protocol: real distinct conditions, request provenance and full offline completion (46.7s)
+  ✓   37 [desktop] › tests/e2e/variation.spec.ts:103:1 › validated grouped configuration reproduces real seeded captures on reset; next seed changes the evidence (9.8s)
+  ✓   38 [laptop] › tests/e2e/adaptive.spec.ts:23:1 › empty heuristic estimates, explicit foundation briefing and manual override do not invent a result (2.8s)
+  ✓   36 [desktop] › tests/e2e/variation.spec.ts:8:3 › Rural crossing: real distinct conditions, request provenance and full offline completion (37.8s)
+  ✓   39 [laptop] › tests/e2e/adaptive.spec.ts:28:1 › real offline completion drives a sourced plan, explicit next briefing and a second actual saved exercise (38.6s)
+  ✓   41 [laptop] › tests/e2e/adaptive.spec.ts:46:1 › live and paused attempts hide planner/competency evidence; actual abort contributes no performance (2.8s)
+  ✓   42 [laptop] › tests/e2e/adaptive.spec.ts:51:1 › a real unsaved completion cannot drive adaptation until native storage retry acknowledges it (19.0s)
+  ✓   40 [laptop] › tests/e2e/adaptive.spec.ts:36:1 › three actual distinct strong attempts support one-level increase, profile isolation and real JSON reset/import replay the same plan (57.4s)
+  ✓   43 [laptop] › tests/e2e/adaptive.spec.ts:59:1 › same-epoch peer save withholds an older planner until native reload includes the actual completed evidence (18.9s)
+  ✓   45 [laptop] › tests/e2e/exercise.spec.ts:78:1 › keyboard actions, confirmed reset and early exit preserve the correct session lifecycle (5.1s)
+  ✓   46 [laptop] › tests/e2e/exercise.spec.ts:114:1 › leaving the console pauses and locks answers/profile without overwriting the active attempt (5.4s)
+  ✓   47 [laptop] › tests/e2e/exercise.spec.ts:136:1 › a missing worker produces an explicit error, never a fictional exercise or score (744ms)
+  ✓   48 [laptop] › tests/e2e/exercise.spec.ts:146:1 › a worker transport failure freezes the real snapshot and offers explicit discard/reset (6.4s)
+  ✓   49 [laptop] › tests/e2e/foundation.spec.ts:11:1 › all seven screens navigate without browser errors or horizontal overflow (1.7s)
+  ✓   50 [laptop] › tests/e2e/foundation.spec.ts:23:1 › valid configuration flows into the briefing without automatically starting the exercise (1.2s)
+  ✓   44 [laptop] › tests/e2e/exercise.spec.ts:4:1 › real offline exercise: moving evidence, decisions, degraded feed, pause and a log-matched result (35.5s)
+  ✓   51 [laptop] › tests/e2e/foundation.spec.ts:39:1 › invalid inputs produce helpful errors; corrected configuration can proceed (1.1s)
+  ✓   52 [laptop] › tests/e2e/foundation.spec.ts:52:1 › guide supports keyboard focus containment and Escape (840ms)
+  ✓   54 [laptop] › tests/e2e/foundation.spec.ts:82:1 › loaded shell navigates offline with no external resource requirements (852ms)
+  ✓   55 [laptop] › tests/e2e/foundation.spec.ts:94:1 › anonymous profile management updates the workspace, without fake history (808ms)
+  ✓   56 [laptop] › tests/e2e/foundation.spec.ts:104:1 › captures the verified foundation UI (1.0s)
+  ✓   57 [laptop] › tests/e2e/foundation.spec.ts:113:1 › navigation is keyboard-accessible and the mobile drawer closes with Escape (482ms)
+  ✓   53 [laptop] › tests/e2e/foundation.spec.ts:64:1 › screen accessibility checks include all routes and expanded instructor controls (9.8s)
+  ✓   59 [laptop] › tests/e2e/history.spec.ts:41:1 › instructor profile/draft/aborted reload, reset cancel/focus, confirmed reset and real backup merge/dedup (5.6s)
+  ✓   60 [laptop] › tests/e2e/history.spec.ts:51:1 › invalid/version/tamper/orphan/conflict imports are rejected without partial writes; an empty merge never clears history (2.3s)
+  ✓   61 [laptop] › tests/e2e/history.spec.ts:58:1 › mid-write quota failure retains actual AAR/backup, excludes unsaved analytics and retries durably once (3.4s)
+  ✓   62 [laptop] › tests/e2e/history.spec.ts:65:1 › blocked IndexedDB startup permits labelled in-memory training then recovers the actual report (1.5s)
+  ✓   58 [laptop] › tests/e2e/history.spec.ts:31:1 › offline exercise saves actual report; reload preserves score/events/replay and truthful individual/unit samples (23.7s)
+  ✓   63 [laptop] › tests/e2e/history.spec.ts:69:1 › corrupt stored score is quarantined, valid sibling stays reviewable, and raw diagnostic preserves the original data (6.0s)
+  ✓   64 [laptop] › tests/e2e/history.spec.ts:76:1 › live attempt locks real private actions even if a disabled button is forced; console reset and refresh do not fabricate history (4.3s)
+  ✓   65 [laptop] › tests/e2e/history.spec.ts:82:1 › cross-tab reset epoch blocks stale writer resurrection while retaining its actual in-memory report (4.0s)
+  ✓   67 [laptop] › tests/e2e/replay.spec.ts:37:1 › real offline replay: penalty anchors, exact prefixes, ordered same-second steps and read-only pacing (30.3s)
+  ✓   66 [laptop] › tests/e2e/history.spec.ts:86:1 › two actual completions drive comparison/mean; real CSV is formula-safe and HTML/native print use the same report (36.1s)
+  ✓   69 [laptop] › tests/e2e/replay.spec.ts:68:1 › aborted before any arrival replays only its real lifecycle, including same-second empty partials (3.3s)
+  ✓   68 [laptop] › tests/e2e/replay.spec.ts:59:1 › missing significant report links to the real terminal opportunity without invented decisions (18.5s)
+  ✓   70 [laptop] › tests/e2e/replay.spec.ts:75:1 › prior replay unmounts, all answers lock during a new live attempt, and session switching resets playback (21.1s)
+  ✓   71 [laptop] › tests/e2e/variation.spec.ts:8:3 › Urban ambiguity: real distinct conditions, request provenance and full offline completion (37.5s)
+  ✓   72 [laptop] › tests/e2e/variation.spec.ts:8:3 › Nightfall protocol: real distinct conditions, request provenance and full offline completion (46.7s)
+  ✓   74 [laptop] › tests/e2e/variation.spec.ts:103:1 › validated grouped configuration reproduces real seeded captures on reset; next seed changes the evidence (9.4s)
+  ✓   75 [mobile] › tests/e2e/adaptive.spec.ts:23:1 › empty heuristic estimates, explicit foundation briefing and manual override do not invent a result (2.9s)
+  ✓   73 [laptop] › tests/e2e/variation.spec.ts:8:3 › Rural crossing: real distinct conditions, request provenance and full offline completion (37.4s)
+  ✓   76 [mobile] › tests/e2e/adaptive.spec.ts:28:1 › real offline completion drives a sourced plan, explicit next briefing and a second actual saved exercise (38.6s)
+  ✓   78 [mobile] › tests/e2e/adaptive.spec.ts:46:1 › live and paused attempts hide planner/competency evidence; actual abort contributes no performance (4.0s)
+  ✓   79 [mobile] › tests/e2e/adaptive.spec.ts:51:1 › a real unsaved completion cannot drive adaptation until native storage retry acknowledges it (18.9s)
+  ✓   77 [mobile] › tests/e2e/adaptive.spec.ts:36:1 › three actual distinct strong attempts support one-level increase, profile isolation and real JSON reset/import replay the same plan (59.8s)
+  ✓   80 [mobile] › tests/e2e/adaptive.spec.ts:59:1 › same-epoch peer save withholds an older planner until native reload includes the actual completed evidence (18.5s)
+  ✓   82 [mobile] › tests/e2e/exercise.spec.ts:78:1 › keyboard actions, confirmed reset and early exit preserve the correct session lifecycle (5.1s)
+  ✓   83 [mobile] › tests/e2e/exercise.spec.ts:114:1 › leaving the console pauses and locks answers/profile without overwriting the active attempt (5.9s)
+  ✓   84 [mobile] › tests/e2e/exercise.spec.ts:136:1 › a missing worker produces an explicit error, never a fictional exercise or score (559ms)
+  ✓   85 [mobile] › tests/e2e/exercise.spec.ts:146:1 › a worker transport failure freezes the real snapshot and offers explicit discard/reset (6.4s)
+  ✓   81 [mobile] › tests/e2e/exercise.spec.ts:4:1 › real offline exercise: moving evidence, decisions, degraded feed, pause and a log-matched result (34.6s)
+  ✓   87 [mobile] › tests/e2e/foundation.spec.ts:23:1 › valid configuration flows into the briefing without automatically starting the exercise (1.2s)
+  ✓   88 [mobile] › tests/e2e/foundation.spec.ts:39:1 › invalid inputs produce helpful errors; corrected configuration can proceed (1.2s)
+  ✓   86 [mobile] › tests/e2e/foundation.spec.ts:11:1 › all seven screens navigate without browser errors or horizontal overflow (4.2s)
+  ✓   89 [mobile] › tests/e2e/foundation.spec.ts:52:1 › guide supports keyboard focus containment and Escape (1.2s)
+  ✓   91 [mobile] › tests/e2e/foundation.spec.ts:82:1 › loaded shell navigates offline with no external resource requirements (741ms)
+  ✓   92 [mobile] › tests/e2e/foundation.spec.ts:94:1 › anonymous profile management updates the workspace, without fake history (986ms)
+  ✓   93 [mobile] › tests/e2e/foundation.spec.ts:104:1 › captures the verified foundation UI (790ms)
+  ✓   94 [mobile] › tests/e2e/foundation.spec.ts:113:1 › navigation is keyboard-accessible and the mobile drawer closes with Escape (655ms)
+  ✓   90 [mobile] › tests/e2e/foundation.spec.ts:64:1 › screen accessibility checks include all routes and expanded instructor controls (8.6s)
+  ✓   96 [mobile] › tests/e2e/history.spec.ts:41:1 › instructor profile/draft/aborted reload, reset cancel/focus, confirmed reset and real backup merge/dedup (7.9s)
+  ✓   97 [mobile] › tests/e2e/history.spec.ts:51:1 › invalid/version/tamper/orphan/conflict imports are rejected without partial writes; an empty merge never clears history (2.4s)
+  ✓   98 [mobile] › tests/e2e/history.spec.ts:58:1 › mid-write quota failure retains actual AAR/backup, excludes unsaved analytics and retries durably once (5.3s)
+  ✓   99 [mobile] › tests/e2e/history.spec.ts:65:1 › blocked IndexedDB startup permits labelled in-memory training then recovers the actual report (1.4s)
+  ✓   95 [mobile] › tests/e2e/history.spec.ts:31:1 › offline exercise saves actual report; reload preserves score/events/replay and truthful individual/unit samples (23.8s)
+  ✓  100 [mobile] › tests/e2e/history.spec.ts:69:1 › corrupt stored score is quarantined, valid sibling stays reviewable, and raw diagnostic preserves the original data (6.0s)
+  ✓  101 [mobile] › tests/e2e/history.spec.ts:76:1 › live attempt locks real private actions even if a disabled button is forced; console reset and refresh do not fabricate history (4.9s)
+  ✓  102 [mobile] › tests/e2e/history.spec.ts:82:1 › cross-tab reset epoch blocks stale writer resurrection while retaining its actual in-memory report (3.0s)
+  ✓  104 [mobile] › tests/e2e/replay.spec.ts:37:1 › real offline replay: penalty anchors, exact prefixes, ordered same-second steps and read-only pacing (29.6s)
+  ✓  103 [mobile] › tests/e2e/history.spec.ts:86:1 › two actual completions drive comparison/mean; real CSV is formula-safe and HTML/native print use the same report (37.6s)
+  ✓  106 [mobile] › tests/e2e/replay.spec.ts:68:1 › aborted before any arrival replays only its real lifecycle, including same-second empty partials (2.8s)
+  ✓  105 [mobile] › tests/e2e/replay.spec.ts:59:1 › missing significant report links to the real terminal opportunity without invented decisions (18.3s)
+  ✓  107 [mobile] › tests/e2e/replay.spec.ts:75:1 › prior replay unmounts, all answers lock during a new live attempt, and session switching resets playback (20.2s)
+  ✓  108 [mobile] › tests/e2e/variation.spec.ts:8:3 › Urban ambiguity: real distinct conditions, request provenance and full offline completion (36.2s)
+  ✓  109 [mobile] › tests/e2e/variation.spec.ts:8:3 › Nightfall protocol: real distinct conditions, request provenance and full offline completion (45.6s)
+  ✓  111 [mobile] › tests/e2e/variation.spec.ts:103:1 › validated grouped configuration reproduces real seeded captures on reset; next seed changes the evidence (8.9s)
+  ✓  110 [mobile] › tests/e2e/variation.spec.ts:8:3 › Rural crossing: real distinct conditions, request provenance and full offline completion (36.0s)
+
+  111 passed (12.9m)
+GATE END — 2026-10-17T14:55:20Z — elapsed 816 seconds
+27dcf7f4a8e1216ed17081ff8b69ab328982e28c951809bf904a4a3ecb8e4cba  dist/assets/index-48Timya1.css
+251fea8d595ea4304a1b41978415f704e6c944c7410facbb881b34d1c7059542  dist/assets/index-BiSwf0C9.js
+26cf3a140eccf9e66182576873a87a7ce86b8973244afb3d0ac5a3db972ee162  dist/assets/simulation.worker-DUgXOd5k.js

@@ -1,0 +1,10 @@
+import { ArrowRight } from 'lucide-react';
+import { presetName } from '../domain/config';
+import type { SessionRecord } from '../domain/types';
+import { useWorkspace } from '../hooks/useWorkspace';
+import { Badge } from './UI';
+
+export function MemorySessionList({ sessions, compact = false }: { sessions: readonly SessionRecord[]; compact?: boolean }) {
+  const { reviewSession, profiles, storage, isActive } = useWorkspace();
+  return <div className={`table-scroll memory-session-list ${compact ? 'memory-session-list--compact' : ''}`} tabIndex={0} role="region" aria-label="Recorded exercise results"><table><thead><tr><th>Exercise</th>{!compact && <th>Trainee</th>}<th>Outcome</th><th>Recorded score</th><th><span className="sr-only">Open result</span></th></tr></thead><tbody>{sessions.map(session => <tr key={session.id}><td><strong>{presetName(session.scenario.config.presetId)}</strong><small className="outcome-observed">Seed {session.scenario.seed} · {session.events.length} events</small><small className="outcome-observed"><time dateTime={session.endedAt}>{new Date(session.endedAt).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'})}</time> · {session.id.slice(-6)}</small><small className="session-save-label" data-testid={`save-${session.id}`}>{storage.savedSessionIds.has(session.id) ? 'Saved on device' : 'Not saved yet'}</small></td>{!compact && <td>{profiles.find(p => p.id === session.profileId)?.name ?? session.profileId}</td>}<td><Badge tone={session.status === 'completed' ? 'green' : 'amber'}>{session.status === 'completed' ? 'Completed' : 'Aborted'}</Badge></td><td>{session.evaluation.score.toFixed(1)}<small> / 100{session.evaluation.comparable ? '' : ' · partial / not comparable'}</small></td><td><button className="text-link" disabled={isActive} aria-label={`Review ${presetName(session.scenario.config.presetId)} seed ${session.scenario.seed} · session ${session.id.slice(-6)}`} onClick={() => reviewSession(session.id)}>Review<ArrowRight size={13}/></button></td></tr>)}</tbody></table></div>;
+}
