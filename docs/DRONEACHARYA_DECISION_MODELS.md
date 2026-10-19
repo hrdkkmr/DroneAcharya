@@ -35,7 +35,7 @@ These are computed once per second for every confirmed track, from the tracker's
 
 **Truth isolation is verified, not just claimed.** `test_decision_models.gd::test_decisions_never_read_ground_truth_labels` overwrites every actor's profile, truth category, significance and group in a running session. Every feature, assessment and recommendation stays identical to an unmodified run.
 
-## 2. Model 1 — rule-based baseline (`rules-da-1`, `scripts/ai/rule_engine.gd`)
+## 2. Model 1 — rule-based baseline (`rules-da-2`, `scripts/ai/rule_engine.gd`)
 
 This is a **rule-based model, not machine learning.**
 
@@ -50,21 +50,33 @@ Rules are checked in this order, and the first match wins:
 | Code | Category | Base score | Condition |
 |---|---|---|---|
 | R1_ID_REPLY | authorised_uav | 0.85 | ≥ 3 radar hits and ID reply on ≥ 50 % |
-| R2_SWARM | swarm | 0.80 | ≥ 2 neighbouring tracks, or a tracker swarm group |
-| R3_WIND_DRIFT | balloon | 0.80 | air speed < 2 m/s and wind alignment > 0.7 |
+| R2_SWARM | swarm | 0.80 | ≥ 1 neighbouring track, or a tracker swarm group |
+| R3_WIND_DRIFT | balloon | 0.80 | air speed < 4 m/s and wind alignment > 0.5 |
 | R4_WING_BEAT | bird | 0.85 | ≥ 3 identification looks and wing beat on ≥ 50 % |
-| R5_ERRATIC | bird | 0.60 | mean turn rate > 25°/s, speed 4–16 m/s, apparent size absent or < 0.9 m |
+| R5_ERRATIC | bird | 0.60 | mean turn rate > 18°/s **or** straightness < 0.4, speed 4–16 m/s, apparent size absent or < 0.9 m |
 | R6_LARGE_SLOW | balloon | 0.70 | apparent size ≥ 1.4 m and speed < 4 m/s |
-| R7_UAV_KINEMATICS | unidentified_uav | 0.65 | ≥ 5 radar hits, ID reply < 20 %, speed ≤ 16 m/s, turn rate ≤ 25°/s |
+| R7_UAV_KINEMATICS | unidentified_uav | 0.65 | ≥ 5 radar hits, ID reply < 20 %, speed ≤ 16 m/s |
 | R8_NO_MATCH | unknown | 0.35 | none of the above |
 
 With *fair* evidence the score is multiplied by 0.85. The score is a **rule-assigned value, not a calibrated probability**, and the UI says so.
 
-## 3. Model 2 — machine-learning classifier
+## 3. Model 2 — trained machine-learning classifier (`track-classifier-v1`)
 
-*Not yet implemented at this point (Phase 3). Phase 4 adds it; this section will then describe the dataset, model, metrics, artefact, inference interface and fallback.*
+This is **trained ML inference**: a scikit-learn random forest (40 trees, depth ≤ 12). It was trained on 100,961 samples from 600 seeded scenarios, selected on 150 validation scenarios and evaluated on 200 + 100 unseen scenarios.
 
-Until then, the policy uses Model 1, labelled `based_on: rules-da-1`.
+- **Artefact:** exported to `simulator/models/track_classifier_v1.json` and evaluated **in GDScript**, locally and offline (`scripts/ai/ml_classifier.gd`; about 0.12 ms per track).
+- **Inputs:** `features-1` only. The loader refuses a model whose feature list differs.
+- **Output:** `{ok, model, method, category, confidence, probabilities, evidence, latency_us}`. `evidence` is Model 1's evidence-quality rating for the same features.
+- **Fallback:** if the file is missing, corrupt, of the wrong version or has mismatched features, the classifier stays unloaded with an error message. Decision support and the policy then use Model 1, and the UI shows "ML classifier unavailable … using the rule-based baseline". The "Use the trained ML classifier" setting can also switch it off.
+- **Held-out test:** accuracy **0.889**, macro-F1 **0.898** (rules-da-2: 0.565 / 0.635).
+- **Degraded set:** 0.757 / 0.783 (rules-da-2: 0.302 / 0.341).
+- **Not calibrated:** ECE 0.13. Scores are not probabilities.
+
+Full dataset, method, metrics, confusion matrices and limitations: `DRONEACHARYA_DATASET_AND_EVALUATION.md`.
+
+### Rule-baseline version note
+
+The table in §2 shows the current `rules-da-2`. Compared with `rules-da-1`, the R2, R3 and R5 thresholds were set from **training-split** per-class percentiles, and R7 lost its turn-rate cap. `rules-da-1` used a-priori values: R2 ≥ 2 neighbours; R3 air speed < 2 m/s and alignment > 0.7; R5 turn rate > 25°/s; R7 turn rate ≤ 25°/s.
 
 ## 4. Model 3 — response policy (`policy-da-1`, `scripts/ai/decision_policy.gd`)
 

@@ -1,0 +1,53 @@
+{
+ "model_version": "track-classifier-v1",
+ "model_type": "random_forest",
+ "model_sha256": "0f3a0105fecbc919a18ab95644ccb66e6ae81166c71da7cdb4aabe355f5531fb",
+ "test": {
+  "samples": 33976,
+  "accuracy": 0.8894,
+  "macro_f1": 0.8982,
+  "ece": 0.128,
+  "rules_accuracy": 0.5654,
+  "rules_macro_f1": 0.6352
+ },
+ "degraded": {
+  "samples": 13199,
+  "accuracy": 0.757,
+  "macro_f1": 0.7829,
+  "ece": 0.1039,
+  "rules_accuracy": 0.3018,
+  "rules_macro_f1": 0.3408
+ },
+ "per_class_test": {
+  "authorised_uav": {
+   "precision": 0.9878,
+   "recall": 0.9912,
+   "f1": 0.9895,
+   "support": 4321
+  },
+  "balloon": {
+   "precision": 0.9237,
+   "recall": 0.9063,
+   "f1": 0.9149,
+   "support": 4664
+  },
+  "bird": {
+   "precision": 0.8615,
+   "recall": 0.9071,
+   "f1": 0.8837,
+   "support": 10933
+  },
+  "swarm": {
+   "precision": 0.9057,
+   "recall": 0.8885,
+   "f1": 0.897,
+   "support": 7362
+  },
+  "unidentified_uav": {
+   "precision": 0.8291,
+   "recall": 0.7839,
+   "f1": 0.8059,
+   "support": 6696
+  }
+ }
+}

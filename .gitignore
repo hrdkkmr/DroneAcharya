@@ -5,3 +5,9 @@ simulator/android/
 **/node_modules/
 exports/
 *.tmp
+
+# ML: generated datasets, trained intermediates and caches (reproducible; never commit)
+ml/data/
+ml/artifacts/
+**/__pycache__/
+*.pyc

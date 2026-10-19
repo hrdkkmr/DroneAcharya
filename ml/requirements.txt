@@ -1,0 +1,6 @@
+# Python environment for training and evaluating Model 2 (not needed to run the simulator).
+# Versions used to produce simulator/models/track_classifier_v1.json:
+numpy==2.3.5
+scikit-learn==1.8.0
+# Used by the session-schema tests only:
+jsonschema==4.26.0

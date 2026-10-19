@@ -18,6 +18,8 @@ static var selected_config: Dictionary = {}
 static var review_session: Dictionary = {}
 ## When true the observation scene replays review_session instead of running live.
 static var replay_requested := false
+## Settings: use the trained ML classifier (Model 2) in decision support when it loads.
+static var use_ml := true
 
 
 static func goto(tree: SceneTree, scene: String) -> void:

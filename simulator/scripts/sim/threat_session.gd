@@ -36,6 +36,9 @@ var observations: Array = [] ## every delivered observation, in delivery order
 ## classifications, response, responded_t}
 var trainee := {}
 var spam_count := 0
+## When false, decision support and availability sampling are skipped (dataset
+## generation does its own sampling and does not need them).
+var run_decisions := true
 
 var _degraded := false
 var _active := {}
@@ -122,7 +125,7 @@ func step() -> bool:
 	tracker.process(delivered, t)
 	for e in tracker.take_events():
 		log_event(e["type"], {"track_id": e["track_id"]})
-	if world.tick % int(definition["tick_rate"]) == 0:
+	if run_decisions and world.tick % int(definition["tick_rate"]) == 0:
 		_sample_availability(t)
 		for change in decisions.update(tracker.confirmed_tracks(), t):
 			log_event("model_output", change)

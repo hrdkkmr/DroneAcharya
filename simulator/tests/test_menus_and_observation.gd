@@ -210,3 +210,22 @@ func test_classification_workflow_through_the_scene_and_scoring_at_the_end() -> 
 	assert_true(not scene.evaluation.is_empty(), "session scored at the end")
 	assert_true(scene.hud.overlay.visible and "Score" in scene.hud.overlay_detail.text, "score shown")
 	assert_eq(scene.record["evaluation"]["rubric"], "da-rubric-1", "record carries the evaluation")
+
+
+func test_settings_screen_reports_models_and_toggles_ml() -> void:
+	var menu := add_scene("res://scenes/main.tscn")
+	await tree.process_frame
+	assert_true(not menu.buttons["settings"].disabled, "settings entry enabled")
+	menu.buttons["settings"].pressed.emit()
+	var screen := await _wait_scene(AppState.SCENES["settings"])
+	var text: String = screen.info_label.text
+	for fragment in ["rule-based", "trained ML classifier", "track-classifier-v1", "Held-out evaluation", "not", "calibrat"]:
+		assert_true(fragment in text, "model information mentions '%s'" % fragment)
+	assert_true(screen.latency_ms > 0.0, "inference latency measured (%.3f ms)" % screen.latency_ms)
+	screen.ml_toggle.button_pressed = false
+	assert_true(not AppState.use_ml, "ML can be switched off")
+	_select("res://scenarios/01_single_rural_day.json")
+	AppState.goto(tree, "observation")
+	var scene := await _wait_scene(AppState.SCENES["observation"])
+	assert_true(not scene.session.decisions.ml_active(), "observation runs rules-only when ML is off")
+	AppState.use_ml = true

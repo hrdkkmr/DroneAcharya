@@ -1,0 +1,671 @@
+{
+ "model_version": "track-classifier-v1",
+ "model_type": "random_forest",
+ "model_sha256": "0f3a0105fecbc919a18ab95644ccb66e6ae81166c71da7cdb4aabe355f5531fb",
+ "dataset_sha256": {
+  "train": "61d1894cfd8de8efcbd163610adbcffc510514773fe27a294999d8b298ca5fb0",
+  "val": "18cc2d5f9db2943468173aedb4031b0e8162e3cecd99377c7465d494ea571e53",
+  "test": "49093ff59304cbcdc0fdde95a8ce98b4093be72e0a99e9c2e839cc279870edd2",
+  "degraded": "b55e9b2b08643f5c1f97aaf8612a09ee1b34a284b187f2988e80f47c37388314"
+ },
+ "results": {
+  "test": {
+   "ml": {
+    "samples": 33976,
+    "accuracy": 0.8894,
+    "macro_f1": 0.8982,
+    "per_class": {
+     "authorised_uav": {
+      "precision": 0.9878,
+      "recall": 0.9912,
+      "f1": 0.9895,
+      "support": 4321
+     },
+     "balloon": {
+      "precision": 0.9237,
+      "recall": 0.9063,
+      "f1": 0.9149,
+      "support": 4664
+     },
+     "bird": {
+      "precision": 0.8615,
+      "recall": 0.9071,
+      "f1": 0.8837,
+      "support": 10933
+     },
+     "swarm": {
+      "precision": 0.9057,
+      "recall": 0.8885,
+      "f1": 0.897,
+      "support": 7362
+     },
+     "unidentified_uav": {
+      "precision": 0.8291,
+      "recall": 0.7839,
+      "f1": 0.8059,
+      "support": 6696
+     }
+    },
+    "confusion_matrix": {
+     "labels": [
+      "authorised_uav",
+      "balloon",
+      "bird",
+      "swarm",
+      "unidentified_uav"
+     ],
+     "rows_true_cols_predicted": [
+      [
+       4283,
+       4,
+       17,
+       6,
+       11
+      ],
+      [
+       4,
+       4227,
+       309,
+       26,
+       98
+      ],
+      [
+       40,
+       127,
+       9917,
+       231,
+       618
+      ],
+      [
+       6,
+       49,
+       411,
+       6541,
+       355
+      ],
+      [
+       3,
+       169,
+       857,
+       418,
+       5249
+      ]
+     ]
+    }
+   },
+   "rules": {
+    "samples": 33976,
+    "accuracy": 0.5654,
+    "macro_f1": 0.6352,
+    "per_class": {
+     "authorised_uav": {
+      "precision": 0.9939,
+      "recall": 0.9019,
+      "f1": 0.9456,
+      "support": 4321
+     },
+     "balloon": {
+      "precision": 0.8509,
+      "recall": 0.482,
+      "f1": 0.6154,
+      "support": 4664
+     },
+     "bird": {
+      "precision": 0.6562,
+      "recall": 0.5975,
+      "f1": 0.6254,
+      "support": 10933
+     },
+     "swarm": {
+      "precision": 0.8166,
+      "recall": 0.3388,
+      "f1": 0.4789,
+      "support": 7362
+     },
+     "unidentified_uav": {
+      "precision": 0.4425,
+      "recall": 0.603,
+      "f1": 0.5104,
+      "support": 6696
+     },
+     "unknown": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+     }
+    },
+    "confusion_matrix": {
+     "labels": [
+      "authorised_uav",
+      "balloon",
+      "bird",
+      "swarm",
+      "unidentified_uav",
+      "unknown"
+     ],
+     "rows_true_cols_predicted": [
+      [
+       3897,
+       0,
+       22,
+       5,
+       0,
+       397
+      ],
+      [
+       0,
+       2248,
+       771,
+       102,
+       1067,
+       476
+      ],
+      [
+       21,
+       216,
+       6532,
+       292,
+       2136,
+       1736
+      ],
+      [
+       3,
+       42,
+       1299,
+       2494,
+       1885,
+       1639
+      ],
+      [
+       0,
+       136,
+       1331,
+       161,
+       4038,
+       1030
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     ]
+    },
+    "coverage": 0.8447,
+    "accuracy_when_answering": 0.6693
+   },
+   "ml_on_rows_with_sufficient_evidence": {
+    "samples": 30121,
+    "accuracy": 0.9029,
+    "macro_f1": 0.911,
+    "per_class": {
+     "authorised_uav": {
+      "precision": 0.9902,
+      "recall": 0.9947,
+      "f1": 0.9925,
+      "support": 3966
+     },
+     "balloon": {
+      "precision": 0.9249,
+      "recall": 0.9225,
+      "f1": 0.9237,
+      "support": 4299
+     },
+     "bird": {
+      "precision": 0.8745,
+      "recall": 0.9126,
+      "f1": 0.8931,
+      "support": 9465
+     },
+     "swarm": {
+      "precision": 0.9281,
+      "recall": 0.903,
+      "f1": 0.9154,
+      "support": 6350
+     },
+     "unidentified_uav": {
+      "precision": 0.8483,
+      "recall": 0.8134,
+      "f1": 0.8305,
+      "support": 6041
+     }
+    },
+    "confusion_matrix": {
+     "labels": [
+      "authorised_uav",
+      "balloon",
+      "bird",
+      "swarm",
+      "unidentified_uav"
+     ],
+     "rows_true_cols_predicted": [
+      [
+       3945,
+       2,
+       9,
+       1,
+       9
+      ],
+      [
+       2,
+       3966,
+       244,
+       14,
+       73
+      ],
+      [
+       30,
+       113,
+       8638,
+       159,
+       525
+      ],
+      [
+       5,
+       49,
+       290,
+       5734,
+       272
+      ],
+      [
+       2,
+       158,
+       697,
+       270,
+       4914
+      ]
+     ]
+    }
+   },
+   "ml_expected_calibration_error": 0.128,
+   "breakdown": {
+    "rule_evidence_insufficient": {
+     "samples": 3855,
+     "ml_accuracy": 0.7834,
+     "ml_macro_f1": 0.7854,
+     "rules_accuracy": 0.0
+    },
+    "rule_evidence_fair": {
+     "samples": 7210,
+     "ml_accuracy": 0.7732,
+     "ml_macro_f1": 0.7811,
+     "rules_accuracy": 0.4635
+    },
+    "rule_evidence_good": {
+     "samples": 22911,
+     "ml_accuracy": 0.9437,
+     "ml_macro_f1": 0.948,
+     "rules_accuracy": 0.6925
+    },
+    "night": {
+     "samples": 8471,
+     "ml_accuracy": 0.8943,
+     "ml_macro_f1": 0.9028,
+     "rules_accuracy": 0.6244
+    },
+    "fog": {
+     "samples": 5518,
+     "ml_accuracy": 0.8644,
+     "ml_macro_f1": 0.8832,
+     "rules_accuracy": 0.5951
+    },
+    "haze": {
+     "samples": 12167,
+     "ml_accuracy": 0.9144,
+     "ml_macro_f1": 0.9178,
+     "rules_accuracy": 0.5937
+    },
+    "degraded_observations_over_30pct": {
+     "samples": 3055,
+     "ml_accuracy": 0.8874,
+     "ml_macro_f1": 0.8885,
+     "rules_accuracy": 0.5195
+    },
+    "difficulty_4_5": {
+     "samples": 17505,
+     "ml_accuracy": 0.8776,
+     "ml_macro_f1": 0.8917,
+     "rules_accuracy": 0.5247
+    }
+   },
+   "label_purity": {
+    "mean": 0.8855,
+    "share_below_0_9": 0.2294
+   },
+   "scenarios": 200
+  },
+  "degraded": {
+   "ml": {
+    "samples": 13199,
+    "accuracy": 0.757,
+    "macro_f1": 0.7829,
+    "per_class": {
+     "authorised_uav": {
+      "precision": 0.9641,
+      "recall": 0.8873,
+      "f1": 0.9241,
+      "support": 1393
+     },
+     "balloon": {
+      "precision": 0.8784,
+      "recall": 0.7832,
+      "f1": 0.828,
+      "support": 1651
+     },
+     "bird": {
+      "precision": 0.6425,
+      "recall": 0.8904,
+      "f1": 0.7464,
+      "support": 4152
+     },
+     "swarm": {
+      "precision": 0.7779,
+      "recall": 0.8562,
+      "f1": 0.8151,
+      "support": 2454
+     },
+     "unidentified_uav": {
+      "precision": 0.8362,
+      "recall": 0.4689,
+      "f1": 0.6008,
+      "support": 3549
+     }
+    },
+    "confusion_matrix": {
+     "labels": [
+      "authorised_uav",
+      "balloon",
+      "bird",
+      "swarm",
+      "unidentified_uav"
+     ],
+     "rows_true_cols_predicted": [
+      [
+       1236,
+       5,
+       68,
+       59,
+       25
+      ],
+      [
+       5,
+       1293,
+       258,
+       48,
+       47
+      ],
+      [
+       21,
+       59,
+       3697,
+       184,
+       191
+      ],
+      [
+       3,
+       17,
+       270,
+       2101,
+       63
+      ],
+      [
+       17,
+       98,
+       1461,
+       309,
+       1664
+      ]
+     ]
+    }
+   },
+   "rules": {
+    "samples": 13199,
+    "accuracy": 0.3018,
+    "macro_f1": 0.3408,
+    "per_class": {
+     "authorised_uav": {
+      "precision": 0.992,
+      "recall": 0.5341,
+      "f1": 0.6944,
+      "support": 1393
+     },
+     "balloon": {
+      "precision": 0.6325,
+      "recall": 0.0896,
+      "f1": 0.157,
+      "support": 1651
+     },
+     "bird": {
+      "precision": 0.4002,
+      "recall": 0.4692,
+      "f1": 0.432,
+      "support": 4152
+     },
+     "swarm": {
+      "precision": 0.6259,
+      "recall": 0.0355,
+      "f1": 0.0671,
+      "support": 2454
+     },
+     "unidentified_uav": {
+      "precision": 0.4355,
+      "recall": 0.2975,
+      "f1": 0.3535,
+      "support": 3549
+     },
+     "unknown": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+     }
+    },
+    "confusion_matrix": {
+     "labels": [
+      "authorised_uav",
+      "balloon",
+      "bird",
+      "swarm",
+      "unidentified_uav",
+      "unknown"
+     ],
+     "rows_true_cols_predicted": [
+      [
+       744,
+       0,
+       71,
+       0,
+       3,
+       575
+      ],
+      [
+       0,
+       148,
+       597,
+       6,
+       396,
+       504
+      ],
+      [
+       3,
+       59,
+       1948,
+       11,
+       638,
+       1493
+      ],
+      [
+       1,
+       5,
+       1054,
+       87,
+       332,
+       975
+      ],
+      [
+       2,
+       22,
+       1197,
+       35,
+       1056,
+       1237
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     ]
+    },
+    "coverage": 0.6375,
+    "accuracy_when_answering": 0.4733
+   },
+   "ml_on_rows_with_sufficient_evidence": {
+    "samples": 9830,
+    "accuracy": 0.7823,
+    "macro_f1": 0.8108,
+    "per_class": {
+     "authorised_uav": {
+      "precision": 0.9698,
+      "recall": 0.9172,
+      "f1": 0.9428,
+      "support": 1015
+     },
+     "balloon": {
+      "precision": 0.9002,
+      "recall": 0.8003,
+      "f1": 0.8473,
+      "support": 1262
+     },
+     "bird": {
+      "precision": 0.6453,
+      "recall": 0.9106,
+      "f1": 0.7554,
+      "support": 2887
+     },
+     "swarm": {
+      "precision": 0.8315,
+      "recall": 0.8808,
+      "f1": 0.8555,
+      "support": 1905
+     },
+     "unidentified_uav": {
+      "precision": 0.8708,
+      "recall": 0.5223,
+      "f1": 0.6529,
+      "support": 2761
+     }
+    },
+    "confusion_matrix": {
+     "labels": [
+      "authorised_uav",
+      "balloon",
+      "bird",
+      "swarm",
+      "unidentified_uav"
+     ],
+     "rows_true_cols_predicted": [
+      [
+       931,
+       1,
+       32,
+       31,
+       20
+      ],
+      [
+       3,
+       1010,
+       188,
+       33,
+       28
+      ],
+      [
+       15,
+       31,
+       2629,
+       94,
+       118
+      ],
+      [
+       2,
+       13,
+       164,
+       1678,
+       48
+      ],
+      [
+       9,
+       67,
+       1061,
+       182,
+       1442
+      ]
+     ]
+    }
+   },
+   "ml_expected_calibration_error": 0.1039,
+   "breakdown": {
+    "rule_evidence_insufficient": {
+     "samples": 3369,
+     "ml_accuracy": 0.683,
+     "ml_macro_f1": 0.689,
+     "rules_accuracy": 0.0
+    },
+    "rule_evidence_fair": {
+     "samples": 4447,
+     "ml_accuracy": 0.6924,
+     "ml_macro_f1": 0.6944,
+     "rules_accuracy": 0.405
+    },
+    "rule_evidence_good": {
+     "samples": 5383,
+     "ml_accuracy": 0.8566,
+     "ml_macro_f1": 0.8692,
+     "rules_accuracy": 0.4054
+    },
+    "night": {
+     "samples": 8912,
+     "ml_accuracy": 0.7574,
+     "ml_macro_f1": 0.7832,
+     "rules_accuracy": 0.3054
+    },
+    "fog": {
+     "samples": 7038,
+     "ml_accuracy": 0.7199,
+     "ml_macro_f1": 0.7502,
+     "rules_accuracy": 0.2926
+    },
+    "haze": {
+     "samples": 2713,
+     "ml_accuracy": 0.7759,
+     "ml_macro_f1": 0.7889,
+     "rules_accuracy": 0.2849
+    },
+    "degraded_observations_over_30pct": {
+     "samples": 11170,
+     "ml_accuracy": 0.7517,
+     "ml_macro_f1": 0.777,
+     "rules_accuracy": 0.3059
+    },
+    "difficulty_4_5": {
+     "samples": 13199,
+     "ml_accuracy": 0.757,
+     "ml_macro_f1": 0.7829,
+     "rules_accuracy": 0.3018
+    }
+   },
+   "label_purity": {
+    "mean": 0.821,
+    "share_below_0_9": 0.3465
+   },
+   "scenarios": 100
+  }
+ }
+}

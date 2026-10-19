@@ -21,6 +21,7 @@ func _initialize() -> void:
 	AppState.selected_config = ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"]
 	await _visit("scenario_select", "scenario_select")
 	await _visit("briefing", "briefing")
+	await _visit("settings", "settings")
 	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day_sensor", "swarm_uav", 70.0, 6.0, true)
 	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day_eye", "", 70.0, 60.0, false)
 	await _observe("res://scenarios/03_mixed_rural_night_degraded.json", "mixed_rural_night_thermal", "unidentified_uav", 60.0, 8.0, true)

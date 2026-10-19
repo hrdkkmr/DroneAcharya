@@ -60,12 +60,13 @@ func test_rules_fire_in_documented_order() -> void:
 	var cases := [
 		[{"duration_s": 3.0}, "unknown", "R0_INSUFFICIENT", "insufficient"],
 		[{"id_reply_fraction": 0.9, "neighbor_count": 3.0}, "authorised_uav", "R1_ID_REPLY", "good"],
-		[{"neighbor_count": 2.0}, "swarm", "R2_SWARM", "good"],
-		[{"air_speed_mean": 1.0, "wind_alignment": 0.9, "speed_mean": 4.0}, "balloon", "R3_WIND_DRIFT", "good"],
+		[{"neighbor_count": 1.0}, "swarm", "R2_SWARM", "good"],
+		[{"air_speed_mean": 3.0, "wind_alignment": 0.6, "speed_mean": 4.0}, "balloon", "R3_WIND_DRIFT", "good"],
 		[{"eo_id_hits": 6.0, "flap_fraction": 0.8, "has_size": 1.0, "size_mean": 0.6}, "bird", "R4_WING_BEAT", "good"],
-		[{"turn_rate_mean_dps": 40.0, "speed_mean": 9.0}, "bird", "R5_ERRATIC", "good"],
+		[{"turn_rate_mean_dps": 20.0, "speed_mean": 9.0, "straightness": 0.8}, "bird", "R5_ERRATIC", "good"],
+		[{"turn_rate_mean_dps": 5.0, "speed_mean": 9.0, "straightness": 0.3}, "bird", "R5_ERRATIC", "good"],
 		[{"has_size": 1.0, "size_mean": 1.8, "speed_mean": 2.0, "eo_id_hits": 2.0}, "balloon", "R6_LARGE_SLOW", "good"],
-		[{"turn_rate_mean_dps": 10.0}, "unidentified_uav", "R7_UAV_KINEMATICS", "good"],
+		[{"turn_rate_mean_dps": 10.0, "straightness": 0.8}, "unidentified_uav", "R7_UAV_KINEMATICS", "good"],
 		[{"speed_mean": 30.0, "air_speed_mean": 30.0}, "unknown", "R8_NO_MATCH", "good"],
 	]
 	for c in cases:
@@ -73,7 +74,7 @@ func test_rules_fire_in_documented_order() -> void:
 		assert_eq([a["category"], a["rule"], a["evidence"]], [c[1], c[2], c[3]], "rule %s" % c[2])
 		assert_true(a["explanation"].length() > 10, "%s explained" % c[2])
 		assert_eq(a["method"], "rule-based", "labelled rule-based, not ML")
-	var fair := RuleEngine.assess(_features({"radar_hits": 8.0, "duration_s": 10.0, "turn_rate_mean_dps": 10.0}))
+	var fair := RuleEngine.assess(_features({"radar_hits": 8.0, "duration_s": 10.0, "turn_rate_mean_dps": 10.0, "straightness": 0.8}))
 	assert_eq(fair["evidence"], "fair", "less evidence is 'fair'")
 	assert_near(fair["confidence"], 0.65 * 0.85, 0.01, "fair evidence lowers the rule confidence")
 

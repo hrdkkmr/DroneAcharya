@@ -4,8 +4,10 @@ extends RefCounted
 ## category, confidence (a rule-assigned score, not a calibrated probability),
 ## evidence quality, the rule that fired and a plain-language explanation.
 ## Rules are checked in the order listed; the first match wins.
+## rules-da-2: thresholds for R2, R3 and R5 were revised from per-class percentiles of
+## the TRAINING split only (rules-da-1 used a-priori values; see the decision-models doc).
 
-const VERSION := "rules-da-1"
+const VERSION := "rules-da-2"
 
 ## Evidence quality from the amount and kind of observation.
 const MIN_DURATION_S := 6.0
@@ -17,10 +19,10 @@ const GOOD_DURATION_S := 15.0
 ## [code, category, base confidence, description]
 const RULES := [
 	["R1_ID_REPLY", "authorised_uav", 0.85, "cooperative ID reply on at least half of radar returns"],
-	["R2_SWARM", "swarm", 0.8, "two or more neighbouring tracks moving together (swarm group)"],
-	["R3_WIND_DRIFT", "balloon", 0.8, "moves with the reported wind at almost zero air speed"],
+	["R2_SWARM", "swarm", 0.8, "at least one neighbouring track moving with it, or a swarm group"],
+	["R3_WIND_DRIFT", "balloon", 0.8, "moves with the reported wind at low air speed"],
 	["R4_WING_BEAT", "bird", 0.85, "wing beat seen on at least half of identification-quality camera looks"],
-	["R5_ERRATIC", "bird", 0.6, "erratic turning at bird-like speed without a large apparent size"],
+	["R5_ERRATIC", "bird", 0.6, "erratic, winding path at bird-like speed without a large apparent size"],
 	["R6_LARGE_SLOW", "balloon", 0.7, "large apparent size and very slow"],
 	["R7_UAV_KINEMATICS", "unidentified_uav", 0.65, "powered-flight kinematics with no cooperative ID reply"],
 ]
@@ -52,17 +54,18 @@ static func _matches(code: String, f: Dictionary) -> bool:
 		"R1_ID_REPLY":
 			return f["radar_hits"] >= 3 and f["id_reply_fraction"] >= 0.5
 		"R2_SWARM":
-			return f["neighbor_count"] >= 2 or f["in_swarm_group"] > 0.5
+			return f["neighbor_count"] >= 1 or f["in_swarm_group"] > 0.5
 		"R3_WIND_DRIFT":
-			return f["air_speed_mean"] < 2.0 and f["wind_alignment"] > 0.7
+			return f["air_speed_mean"] < 4.0 and f["wind_alignment"] > 0.5
 		"R4_WING_BEAT":
 			return f["eo_id_hits"] >= 3 and f["flap_fraction"] >= 0.5
 		"R5_ERRATIC":
-			return f["turn_rate_mean_dps"] > 25.0 and f["speed_mean"] >= 4.0 and f["speed_mean"] <= 16.0 and (f["has_size"] < 0.5 or f["size_mean"] < 0.9)
+			var winding: bool = f["turn_rate_mean_dps"] > 18.0 or f["straightness"] < 0.4
+			return winding and f["speed_mean"] >= 4.0 and f["speed_mean"] <= 16.0 and (f["has_size"] < 0.5 or f["size_mean"] < 0.9)
 		"R6_LARGE_SLOW":
 			return f["has_size"] > 0.5 and f["size_mean"] >= 1.4 and f["speed_mean"] < 4.0
 		"R7_UAV_KINEMATICS":
-			return f["radar_hits"] >= 5 and f["id_reply_fraction"] < 0.2 and f["speed_mean"] <= 16.0 and f["turn_rate_mean_dps"] <= 25.0
+			return f["radar_hits"] >= 5 and f["id_reply_fraction"] < 0.2 and f["speed_mean"] <= 16.0
 	return false
 
 

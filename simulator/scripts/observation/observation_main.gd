@@ -13,6 +13,7 @@ const ObservationHud := preload("res://scripts/observation/observation_hud.gd")
 const TrackOverlay := preload("res://scripts/observation/track_overlay.gd")
 const SessionRecord := preload("res://scripts/training/session_record.gd")
 const Rubric := preload("res://scripts/training/rubric.gd")
+const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
 const DEFAULT_SCENARIO := "res://scenarios/01_single_rural_day.json"
 
 var session: ThreatSession
@@ -59,7 +60,7 @@ func _ready() -> void:
 
 ## (Re)starts the exercise from the same config and seed.
 func start_session() -> void:
-	session = ThreatSession.new(config)
+	session = ThreatSession.new(config, MlClassifier.shared() if AppState.use_ml else null)
 	for child in world_root.get_children():
 		child.free()
 	for child in actors_root.get_children():
