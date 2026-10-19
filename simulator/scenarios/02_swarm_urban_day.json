@@ -1,0 +1,21 @@
+{
+  "format": "droneacharya-scenario",
+  "version": 1,
+  "id": "swarm-urban-day",
+  "title": "Market town: coordinated swarm (day)",
+  "description": "A fictional town at the edge of the training area. A group of small UAVs flies in formation; buildings can hide contacts at low elevation.",
+  "seed": 26248,
+  "environment": "urban",
+  "time_of_day": "day",
+  "visibility": "clear",
+  "duration_s": 150,
+  "difficulty": 3,
+  "wind": {"speed_mps": 2.0, "direction_deg": 200},
+  "groups": [
+    {"profile": "swarm_uav", "behavior": "transit", "count": 6, "spawn_s": [10, 25], "start_range_m": [900, 1100]},
+    {"profile": "authorised_uav", "behavior": "transit", "count": 1, "spawn_s": [0, 30], "start_range_m": [800, 1000]},
+    {"profile": "bird", "behavior": "erratic", "count": 2, "spawn_s": [0, 30], "start_range_m": [250, 500]},
+    {"profile": "balloon", "behavior": "drift", "count": 1, "spawn_s": [0, 10], "start_range_m": [400, 600]}
+  ],
+  "sensor": {"clutter_per_min": 1.5}
+}

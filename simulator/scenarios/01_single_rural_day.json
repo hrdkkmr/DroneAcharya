@@ -1,0 +1,20 @@
+{
+  "format": "droneacharya-scenario",
+  "version": 1,
+  "id": "single-rural-day",
+  "title": "Ridge outpost: single contact (day)",
+  "description": "Clear daylight over open farmland near a fictional border outpost. One unidentified UAV approaches the protected area; a bird and authorised traffic are also present.",
+  "seed": 26247,
+  "environment": "rural",
+  "time_of_day": "day",
+  "visibility": "clear",
+  "duration_s": 120,
+  "difficulty": 1,
+  "wind": {"speed_mps": 3.0, "direction_deg": 70},
+  "groups": [
+    {"profile": "unidentified_uav", "behavior": "loiter", "count": 1, "spawn_s": [5, 15], "start_range_m": [600, 800]},
+    {"profile": "authorised_uav", "behavior": "transit", "count": 1, "spawn_s": [0, 20], "start_range_m": [700, 900]},
+    {"profile": "bird", "behavior": "erratic", "count": 1, "spawn_s": [0, 10], "start_range_m": [250, 450]}
+  ],
+  "sensor": {"clutter_per_min": 0.5}
+}

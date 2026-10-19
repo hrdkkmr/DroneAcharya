@@ -18,7 +18,7 @@ func _initialize() -> void:
 	# Measure real rendering headroom rather than the monitor's refresh rate.
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	await process_frame
-	var main: Node = load("res://scenes/main.tscn").instantiate()
+	var main: Node = load("res://scenes/flight/flight_training.tscn").instantiate()
 	root.add_child(main)
 	await physics_frame
 	var pilot := Autopilot.new()

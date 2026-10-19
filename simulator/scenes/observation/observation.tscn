@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/observation/observation_main.gd" id="1_obs"]
+[ext_resource type="Script" path="res://scripts/observation/observer_rig.gd" id="2_rig"]
+
+[node name="ObservationTraining" type="Node3D"]
+process_mode = 3
+script = ExtResource("1_obs")
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="Actors" type="Node3D" parent="."]
+
+[node name="Observer" type="Node3D" parent="."]
+script = ExtResource("2_rig")
+
+[node name="EyeCamera" type="Camera3D" parent="Observer"]
+current = true
+fov = 70.0
+far = 4000.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 10.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 18
+theme_override_constants/outline_size = 6
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+text = "DroneAcharya — synthetic training only"
+horizontal_alignment = 1

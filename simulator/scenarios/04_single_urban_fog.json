@@ -1,0 +1,19 @@
+{
+  "format": "droneacharya-scenario",
+  "version": 1,
+  "id": "single-urban-fog",
+  "title": "Riverside town: single contact in fog",
+  "description": "Reduced visibility in a fictional riverside town. The camera's useful range is short; radar still reports positions, with noise.",
+  "seed": 26250,
+  "environment": "urban",
+  "time_of_day": "day",
+  "visibility": "fog",
+  "duration_s": 120,
+  "difficulty": 2,
+  "wind": {"speed_mps": 1.5, "direction_deg": 120},
+  "groups": [
+    {"profile": "unidentified_uav", "behavior": "transit", "count": 1, "spawn_s": [5, 20], "start_range_m": [600, 800]},
+    {"profile": "bird", "behavior": "erratic", "count": 1, "spawn_s": [0, 20], "start_range_m": [200, 400]}
+  ],
+  "sensor": {"clutter_per_min": 1.0}
+}

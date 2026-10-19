@@ -7,7 +7,7 @@ const HUD := preload("res://scripts/ui/hud.gd")
 
 
 func _start() -> Node:
-	var main := add_scene("res://scenes/main.tscn")
+	var main := add_scene("res://scenes/flight/flight_training.tscn")
 	await wait_physics_frames(3)
 	return main
 

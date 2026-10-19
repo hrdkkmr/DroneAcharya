@@ -1,0 +1,29 @@
+{
+  "format": "droneacharya-scenario",
+  "version": 1,
+  "id": "mixed-rural-night-degraded",
+  "title": "Farm track: mixed contacts at night (degraded sensor)",
+  "description": "Night with light haze over open terrain. The radar link degrades for part of the exercise: expect missed updates, delays and noisier positions.",
+  "seed": 26249,
+  "environment": "rural",
+  "time_of_day": "night",
+  "visibility": "haze",
+  "duration_s": 180,
+  "difficulty": 4,
+  "wind": {"speed_mps": 5.0, "direction_deg": 300},
+  "groups": [
+    {"profile": "unidentified_uav", "behavior": "hover", "count": 1, "spawn_s": [5, 20], "start_range_m": [600, 900]},
+    {"profile": "unidentified_uav", "behavior": "transit", "count": 1, "spawn_s": [40, 70], "start_range_m": [800, 1000]},
+    {"profile": "swarm_uav", "behavior": "loiter", "count": 4, "spawn_s": [60, 90], "start_range_m": [900, 1200]},
+    {"profile": "authorised_uav", "behavior": "transit", "count": 1, "spawn_s": [0, 40], "start_range_m": [800, 1100]},
+    {"profile": "bird", "behavior": "erratic", "count": 2, "spawn_s": [0, 60], "start_range_m": [200, 500]},
+    {"profile": "balloon", "behavior": "drift", "count": 1, "spawn_s": [0, 20], "start_range_m": [400, 700]}
+  ],
+  "sensor": {
+    "radar": {"detection_prob": 0.82, "range_noise_m": 14},
+    "eo": {"detection_prob": 0.9},
+    "delay_s": [0.3, 1.6],
+    "clutter_per_min": 2.0,
+    "degradation": [{"start_s": 50, "end_s": 85, "severity": 0.7}]
+  }
+}

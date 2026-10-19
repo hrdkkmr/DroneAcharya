@@ -1,7 +1,8 @@
 extends SceneTree
 ## Headless test runner. Usage (from the workspace root):
 ##   Godot_v4.7.2-stable_win64_console.exe --headless --path simulator --script res://tests/run_tests.gd
-## Optional: append `-- --dir=res://some/folder` to run tests from another folder.
+## Optional: append `-- --dir=res://some/folder` to run tests from another folder, and/or
+## `-- --only=text` to run only test files whose name contains `text`.
 ## Runs every `test_*` method in every `test_*.gd` file of the folder. A test fails
 ## if an assertion fails or if any engine/script error is logged while it runs.
 ## Tests may `await` frames (see test_case.gd); each one gets `tree` set to this SceneTree.
@@ -86,9 +87,13 @@ func _requested_dir() -> String:
 
 
 func _test_files(dir_path: String) -> PackedStringArray:
+	var only := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):
+			only = arg.trim_prefix("--only=")
 	var result := PackedStringArray()
 	for file in DirAccess.get_files_at(dir_path):
-		if file.begins_with("test_") and file.ends_with(".gd"):
+		if file.begins_with("test_") and file.ends_with(".gd") and (only.is_empty() or only in file):
 			result.append(dir_path.path_join(file))
 	result.sort()
 	return result

@@ -59,6 +59,8 @@ func cleanup() -> void:
 	if tree == null:
 		return
 	tree.paused = false
+	if tree.current_scene != null:
+		tree.unload_current_scene()
 	for node in _added_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
