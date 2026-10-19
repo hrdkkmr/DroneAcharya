@@ -89,7 +89,7 @@ func test_observation_scene_runs_pauses_and_restarts() -> void:
 	scene.toggle_pause()
 	await wait_physics_frames(30)
 	assert_eq(scene.session.tick(), tick, "simulation frozen while paused")
-	assert_true(scene._overlay.visible, "pause overlay")
+	assert_true(scene.hud.overlay.visible, "pause overlay")
 	scene.toggle_pause()
 	var layout: Dictionary = scene.session.definition["layout"]
 	scene.start_session()
@@ -120,3 +120,63 @@ func test_exit_to_menu_aborts_the_session() -> void:
 	scene.exit_to_menu()
 	await _wait_scene(AppState.SCENES["menu"])
 	assert_eq(session.status, ThreatSession.Status.ABORTED, "session aborted on exit")
+
+
+func _start_observation(path: String, seconds: float) -> Node:
+	_select(path)
+	AppState.goto(tree, "observation")
+	var scene: Node = await _wait_scene(AppState.SCENES["observation"])
+	while scene.session.time_s() < seconds:
+		await tree.physics_frame
+	return scene
+
+
+func test_sensor_view_toggle_changes_view_and_uses_thermal_at_night() -> void:
+	var day := await _start_observation("res://scenarios/01_single_rural_day.json", 1.0)
+	var press := InputEventAction.new()
+	press.action = "toggle_view"
+	press.pressed = true
+	Input.parse_input_event(press)
+	await tree.process_frame
+	await tree.process_frame
+	assert_true(day.sensor_view and day.hud.sensor_shade.visible, "V switches to the sensor view")
+	assert_true(day.observer.fov <= 30.0, "sensor view is zoomed (%.1f°)" % day.observer.fov)
+	assert_true("TV" in day.view_text(), "daylight sensor is TV mode")
+	day.set_sensor_view(false)
+	assert_true(day.observer.fov >= 50.0 and not day.hud.sensor_shade.visible, "back to eye view")
+	var night := await _start_observation("res://scenarios/03_mixed_rural_night_degraded.json", 1.0)
+	night.set_sensor_view(true)
+	assert_true("thermal" in night.view_text(), "night sensor is thermal mode")
+	for id in night._visuals:
+		assert_true(night._visuals[id].thermal, "%s drawn as heat signature" % id)
+
+
+func test_track_ui_shows_only_tracker_output() -> void:
+	var scene := await _start_observation("res://scenarios/02_swarm_urban_day.json", 60.0)
+	var tracks: Array = scene.session.tracker.confirmed_tracks()
+	assert_true(tracks.size() >= 2, "tracks available after 60 s (%d)" % tracks.size())
+	scene.cycle_track()
+	assert_eq(scene.selected_track, tracks[0]["id"], "Tab selects the first track")
+	scene.cycle_track()
+	assert_eq(scene.selected_track, tracks[1]["id"], "Tab moves to the next track")
+	scene.centre_on_selected()
+	scene.overlay.update_markers()
+	assert_true(scene.overlay.markers.size() > 0, "markers computed")
+	for id in scene.overlay._screen_positions:
+		assert_true(scene.session.tracker.tracks.has(id), "marker %s belongs to a tracker track" % id)
+	assert_true(scene.overlay._screen_positions.has(scene.selected_track), "centred track has a marker on screen")
+	scene.hud.refresh(scene.session, scene.selected_track, scene.view_text(), 1.0)
+	var visible_text: String = scene.hud.details_label.text + scene.hud.sensor_label.text
+	for forbidden in ["unidentified_uav", "authorised_uav", "swarm_uav", "balloon", "truth", "A01", "G01"]:
+		assert_true(not forbidden in visible_text, "HUD does not reveal '%s'" % forbidden)
+
+
+func test_details_explain_coasting_and_lost_tracks() -> void:
+	var scene := await _start_observation("res://scenarios/01_single_rural_day.json", 30.0)
+	var track: Dictionary = scene.session.tracker.confirmed_tracks()[0]
+	track["status"] = "coasting"
+	track["last_update_t"] = scene.session.time_s() - 4.0
+	var text: String = scene.hud.track_details(scene.session, track["id"])
+	assert_true("extrapolated, not observed" in text, "coasting track explained")
+	scene.session.tracker._retire(track, "lost", scene.session.time_s())
+	assert_true("lost at" in scene.hud.track_details(scene.session, track["id"]), "lost track explained")

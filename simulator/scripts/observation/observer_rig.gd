@@ -1,9 +1,12 @@
 extends Node3D
 ## Observation-post camera. Look with right-mouse drag or W/A/S/D; zoom with the
 ## mouse wheel. Sensitivity scales with zoom so aiming stays precise when zoomed in.
+## Eye view zooms 70°→20°; the simulated sensor camera zooms 30°→2°.
 
-const MIN_FOV := 4.0
 const MAX_FOV := 70.0
+const EYE_MIN_FOV := 20.0
+const SENSOR_MAX_FOV := 30.0
+const SENSOR_MIN_FOV := 2.0
 const KEY_LOOK_DEGREES_PER_SECOND := 60.0
 
 @export var mouse_sensitivity := 0.25 ## degrees per pixel at full zoom-out
@@ -11,6 +14,7 @@ const KEY_LOOK_DEGREES_PER_SECOND := 60.0
 var yaw_degrees := 0.0
 var pitch_degrees := 5.0
 var fov := MAX_FOV
+var sensor_mode := false
 
 @onready var eye_camera: Camera3D = $EyeCamera
 
@@ -44,8 +48,17 @@ func _process(delta: float) -> void:
 
 
 func set_fov(value: float) -> void:
-	fov = clampf(value, MIN_FOV, MAX_FOV)
+	if sensor_mode:
+		fov = clampf(value, SENSOR_MIN_FOV, SENSOR_MAX_FOV)
+	else:
+		fov = clampf(value, EYE_MIN_FOV, MAX_FOV)
 	_apply()
+
+
+## Switches between the naked-eye view and the simulated sensor camera.
+func set_sensor_mode(enabled: bool) -> void:
+	sensor_mode = enabled
+	set_fov(minf(fov, 12.0) if enabled else maxf(fov, 50.0))
 
 
 ## Points the view at a world position (used by "centre on track" and tests).

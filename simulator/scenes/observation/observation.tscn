@@ -12,6 +12,7 @@ script = ExtResource("1_obs")
 [node name="Actors" type="Node3D" parent="."]
 
 [node name="Observer" type="Node3D" parent="."]
+physics_interpolation_mode = 2
 script = ExtResource("2_rig")
 
 [node name="EyeCamera" type="Camera3D" parent="Observer"]

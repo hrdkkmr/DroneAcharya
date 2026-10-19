@@ -16,9 +16,9 @@ const WEIGHT_KEYS := ["detection", "classification", "evidence", "response", "re
 const DEFAULT_WEIGHTS := {"detection": 20.0, "classification": 20.0, "evidence": 15.0, "response": 20.0, "response_time": 15.0, "degraded": 10.0}
 const DEFAULT_SENSOR := {
 	"radar": {"enabled": true, "range_m": 1500.0, "rate_hz": 1.0, "range_noise_m": 8.0,
-		"bearing_noise_deg": 1.0, "elevation_noise_deg": 1.5, "detection_prob": 0.9},
+		"bearing_noise_deg": 0.5, "elevation_noise_deg": 0.8, "detection_prob": 0.9, "max_elevation_deg": 60.0},
 	"eo": {"enabled": true, "range_m": 700.0, "id_range_m": 350.0, "rate_hz": 5.0,
-		"bearing_noise_deg": 0.15, "detection_prob": 0.95},
+		"bearing_noise_deg": 0.15, "detection_prob": 0.95, "fov_deg": 360.0, "center_deg": 0.0},
 	"delay_s": [0.2, 1.0],
 	"clutter_per_min": 1.0,
 	"degradation": [],
@@ -95,6 +95,7 @@ static func generate(scenario_seed: int, options: Dictionary = {}) -> Dictionary
 	var sensor := DEFAULT_SENSOR.duplicate(true)
 	sensor["radar"]["detection_prob"] = snappedf(0.92 * quality, 0.01)
 	sensor["radar"]["range_noise_m"] = 6.0 + 3.0 * difficulty
+	sensor["radar"]["bearing_noise_deg"] = 0.3 + 0.15 * difficulty
 	sensor["eo"]["detection_prob"] = snappedf(0.96 * quality, 0.01)
 	sensor["delay_s"] = [0.2, 0.6 + 0.3 * difficulty]
 	sensor["clutter_per_min"] = 0.5 * difficulty
@@ -171,6 +172,7 @@ static func _sensor(raw: Variant, c: Dictionary, errors: PackedStringArray) -> D
 		"bearing_noise_deg": _number(radar_src, "bearing_noise_deg", 0.0, 10.0, errors, d["radar"]["bearing_noise_deg"], "sensor.radar."),
 		"elevation_noise_deg": _number(radar_src, "elevation_noise_deg", 0.0, 10.0, errors, d["radar"]["elevation_noise_deg"], "sensor.radar."),
 		"detection_prob": _number(radar_src, "detection_prob", 0.0, 1.0, errors, d["radar"]["detection_prob"], "sensor.radar."),
+		"max_elevation_deg": _number(radar_src, "max_elevation_deg", 5.0, 90.0, errors, d["radar"]["max_elevation_deg"], "sensor.radar."),
 	}
 	var eo := {
 		"enabled": bool(eo_src.get("enabled", true)),
@@ -179,6 +181,8 @@ static func _sensor(raw: Variant, c: Dictionary, errors: PackedStringArray) -> D
 		"rate_hz": _number(eo_src, "rate_hz", 0.5, 30.0, errors, d["eo"]["rate_hz"], "sensor.eo."),
 		"bearing_noise_deg": _number(eo_src, "bearing_noise_deg", 0.0, 5.0, errors, d["eo"]["bearing_noise_deg"], "sensor.eo."),
 		"detection_prob": _number(eo_src, "detection_prob", 0.0, 1.0, errors, d["eo"]["detection_prob"], "sensor.eo."),
+		"fov_deg": _number(eo_src, "fov_deg", 5.0, 360.0, errors, d["eo"]["fov_deg"], "sensor.eo."),
+		"center_deg": _number(eo_src, "center_deg", 0.0, 360.0, errors, d["eo"]["center_deg"], "sensor.eo."),
 	}
 	if _is_number(eo["id_range_m"]) and _is_number(eo["range_m"]) and eo["id_range_m"] > eo["range_m"]:
 		errors.append("sensor.eo.id_range_m must not exceed sensor.eo.range_m")

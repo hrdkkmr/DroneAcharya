@@ -90,13 +90,13 @@ static func _actor(number: int, group: Dictionary, profile: Dictionary, rng: Ran
 		"spawn_tick": int(round(spawn_s * TICK_RATE)),
 		"initial_position": start, "initial_velocity": velocity,
 		"size_m": profile["size_m"], "radar_reflectivity": profile["radar_reflectivity"],
-		"id_reply": profile["id_reply"], "params": params,
+		"id_reply": profile["id_reply"], "flapping": profile.get("flaps", false), "params": params,
 	}
 
 
 ## Swarm members fly in a staggered V behind the first member (the leader).
 static func _attach_to_formation(actor: Dictionary, leader: Dictionary, index: int, rng: RandomNumberGenerator) -> void:
-	var spacing := rng.randf_range(8.0, 12.0)
+	var spacing := rng.randf_range(20.0, 30.0)
 	var rank := (index + 1) / 2
 	var side := -1.0 if index % 2 == 1 else 1.0
 	var offset := Vector3(side * rank * spacing, rng.randf_range(-3.0, 3.0), rank * spacing)

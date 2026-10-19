@@ -122,11 +122,62 @@ Target actors **do not collide** with buildings or trees. The generator keeps th
 
 `vehicle_state.gd` holds position, velocity, acceleration, yaw, time, `horizontal_speed()`, `heading_degrees()` and `to_dict()`. Target actors use it directly. The player's training drone keeps its own Stage 1 assisted-flight controller (`drone_controller.gd`, 60 Hz Godot physics, collisions with course obstacles). Its telemetry uses the same units and axis conventions.
 
-## 6. Sensor model
+## 6. Synthetic sensor model — synthetic sensor simulation
 
-*Added in Phase 2. See the Phase 2 section once it is implemented.*
+`sensor_model.gd`. These are **fictional training sensors**: their outputs are synthetic and are **not real sensor measurements or performance figures**.
 
-## 7. Rendering (observation scene)
+**Separation from truth.** The sensor reads only `ThreatWorld.physical_snapshot()`: position, velocity, size, radar reflectivity, cooperative-ID capability and whether the object flaps its wings. It never sees profile names or truth labels. Each observation is a dictionary of measured values. The actor that produced it is written to a separate `truth_links` map (observation id → actor id, or `"clutter"`), which only evaluation, dataset labelling and replay may read. `test_sensor_and_tracker.gd` checks that no observation or track carries a truth key.
+
+| Parameter | Radar-like sensor (default) | Camera / EO (default) |
+|---|---|---|
+| Range | `range_m` 1500 | `range_m` 700 × visibility (clear 1, haze 0.6, fog 0.25) × night 0.5 |
+| Field of view | all-round azimuth; elevation ≤ `max_elevation_deg` 60 | azimuth sector `fov_deg` 360 (panoramic array) centred on `center_deg`; configurable down to 5° |
+| Scan rate | `rate_hz` 1.0 | `rate_hz` 5.0 |
+| Detection probability | `detection_prob` 0.9 × reflectivity factor (0.55–1.0) × (1 − 0.5 (r/R)²) × (1 − 0.6 s) × 0.7 through trees × 0.95 urban | `detection_prob` 0.95 × (1 − 0.6 (r/R)²) × (1 − 0.3 s) |
+| Line of sight | blocked by buildings; trees reduce detection | blocked by buildings and trees |
+| Measurement noise | range σ `range_noise_m` 8 m, bearing σ 0.5°, elevation σ 0.8°, all × (1 + 2 s) | bearing/elevation σ 0.15° × (1 + s); range is a coarse estimate (σ = 25 % of range) |
+| Extra cues | fictional cooperative ID reply: 90 % × (1 − 0.5 s) for cooperative objects, 1 % spurious otherwise | within `id_range_m` 350 (also limited by the current camera range): apparent size (±15 %) and wing-beat cue (85 % for flapping objects, 4 % false) |
+| Quality indicator | detection probability + N(0, 0.05) | 1 − r/R + N(0, 0.05) |
+| Clutter | Poisson false detections, `clutter_per_min` × (1 + 2 s), random positions 200 m–range | none |
+
+*s* = severity (0–1) of an active degradation window; *r* = target range; *R* = sensor range.
+
+- **Delay:** every observation is delivered `delay_s` [min, max] × (1 + s) seconds after it is measured, rounded to the tick. It carries both its measurement time `t` and its delivery time `t_delivered`.
+- **Random streams:** separate seeded streams for radar, camera, clutter and delay keep the output reproducible.
+
+**Observation fields:**
+
+- `id`, `sensor`, `t`, `t_delivered`;
+- `bearing_deg`, `elevation_deg`, `range_m`, `range_sigma_m`;
+- `position` (estimated from the measurements);
+- `quality`, `degraded`, `id_reply`, `id_quality`, `apparent_size_m` (−1 when not available), `flap_detected`.
+
+**Night "thermal" and day "TV" sensor views** are rendering styles only (§8). Detection is decided by the model above, not by pixels.
+
+## 7. Tracking and association — deterministic, rule-based processing of observations
+
+`tracker.gd` uses only delivered observations plus public sensor specifications.
+
+| Step | Rule |
+|---|---|
+| Association | Per (sensor, time) batch, greedy global nearest neighbour inside a gate. **Radar:** distance to the predicted position; gate = 15 m + 3·√(σ_range² + (range·σ_bearing)²) + 6 m/s × time since the last update. **Camera:** cross-range metres (angle × range); gate = 10 m + 3·range·σ_bearing + 6 m/s × elapsed time |
+| Track start | An unassociated radar observation starts a *tentative* track. The camera starts tracks only if the radar is disabled |
+| Filter | Alpha-beta. The first updates use growing-memory gains α = 2(2n−1)/(n(n+1)), β = 6/(n(n+1)) (least-squares line fit), settling to radar α 0.4 / β 0.1 and camera α 0.5 / β 0.02 |
+| Fusion | The camera corrects direction only, keeping the predicted range (its range is coarse). While a track has a camera update less than 1 s old, radar corrects **range only**, along the line of sight. Camera updates closer than 50 m are not applied to motion |
+| Late observations | Observations older than the track's last update add to its attributes (counts, cues) but not to its motion |
+| Lifecycle | tentative → **confirmed** (3 hits within 6 s; otherwise *dropped*) → **coasting** (no update for 2.5 s; the position shown is extrapolated and labelled as such) → **lost** (no update for 8 s; retired and kept for review). A coasting track that is updated again is *reacquired* with the same ID |
+| History | Up to 240 filtered states per track, plus counts: radar and camera hits, ID replies, identification-quality hits, size estimates, wing beats, quality and degraded hits |
+| Swarm summary | Confirmed tracks are linked when closer than 80 m with horizontal velocity within 6 m/s (single-link). Components of 3+ tracks form a swarm group (`S01`, …) whose ID persists through membership overlap. Individual tracks are kept; the group is a summary for assessment |
+
+Known limitations:
+
+- Greedy association can swap closely spaced targets.
+- Swarms flying closer together than the radar can resolve (about 2σ cross-range) appear as fewer tracks.
+- The filter is not a Kalman filter: it has no covariance and no manoeuvre model.
+
+Each limitation is visible in testing and is documented rather than hidden.
+
+## 8. Rendering (observation scene)
 
 The scene renders the simulation; it never changes it. `observation_main.gd` steps the session at 20 Hz from Godot's 60 Hz physics loop and interpolates actor positions between ticks for smooth motion.
 
@@ -139,3 +190,23 @@ The scene renders the simulation; it never changes it. `observation_main.gd` ste
 - the protected zone and the tower.
 
 Actors are primitive meshes (UAV with rotors; authorised UAVs carry a green light; flapping birds; balloons) drawn at **2× nominal size**, a readability choice that is documented in `actor_visuals.gd`.
+
+### Sensor view and track display (trainee-facing)
+
+- **`V`** toggles between the eye view (70°–20° field of view) and the simulated sensor camera (30°–2°).
+  - By day the sensor view is a monochrome "TV" style.
+  - At night it is a "thermal" style, in which actor meshes are drawn as bright, unshaded heat signatures (balloons dimmer).
+  - Both are visual aids only.
+- **Track markers** (`track_overlay.gd`) are drawn at the **tracker's estimated position**, never at the ground-truth position:
+  - grey square: tentative;
+  - green brackets: confirmed;
+  - amber dashed brackets: coasting, with "no update N s";
+  - yellow: selected.
+  - Swarm members show brackets only, plus one group label at the group centroid.
+- **The HUD** (`observation_hud.gd`) shows:
+  - radar status, including "DEGRADED" during degradation windows;
+  - the current camera range;
+  - track counts, recent delivery delay and the view;
+  - a sortable track table and selected-track details.
+
+  It reads only tracker and sensor-status data. A test checks that the HUD text contains no actor IDs or profile names.

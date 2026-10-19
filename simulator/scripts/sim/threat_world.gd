@@ -87,6 +87,7 @@ func physical_snapshot() -> Array:
 			"actor_id": d["id"], ## used only to label truth links; sensors must not copy it into observations
 			"position": record["state"].position, "velocity": record["state"].velocity,
 			"size_m": d["size_m"], "radar_reflectivity": d["radar_reflectivity"], "id_reply": d["id_reply"],
+			"flapping": d.get("flapping", false),
 		})
 	return result
 

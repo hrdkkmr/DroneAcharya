@@ -52,10 +52,12 @@ func test_swarm_flies_as_a_group() -> void:
 			assert_eq(actor["group_id"], "G01", "%s in group G01" % actor["id"])
 	assert_eq(members.size(), 6, "six swarm members")
 	_run(world, 1600)
-	var leader: Vector3 = world.get_state(members[0]).position
-	for id in members.slice(1):
-		var distance := leader.distance_to(world.get_state(id).position)
-		assert_true(distance < 60.0, "%s stays in formation (%.1f m from leader)" % [id, distance])
+	var leader: RefCounted = world.get_state(members[0])
+	for actor in world.definition["actors"]:
+		if actor["id"] in members.slice(1):
+			var slot: Vector3 = leader.position + (actor["params"]["offset"] as Vector3).rotated(Vector3.UP, leader.yaw)
+			var error := slot.distance_to(world.get_state(actor["id"]).position)
+			assert_true(error < 20.0, "%s holds its formation slot (%.1f m off)" % [actor["id"], error])
 
 
 func test_actor_speeds_and_altitudes_respect_profiles() -> void:

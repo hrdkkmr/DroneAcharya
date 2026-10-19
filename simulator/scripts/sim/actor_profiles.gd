@@ -11,7 +11,7 @@ const PROFILES := {
 		"label": "Bird (biological)",
 		"truth_category": "background", "significant": false,
 		"behaviors": ["erratic"],
-		"size_m": 0.6, "radar_reflectivity": 0.25, "id_reply": false,
+		"size_m": 0.6, "radar_reflectivity": 0.25, "id_reply": false, "flaps": true,
 		"max_speed": 15.0, "max_acceleration": 5.0, "max_turn_rate_degrees": 140.0,
 		"max_climb_rate": 3.0, "damping": 0.3, "wind_factor": 0.25,
 		"speed_mps": [6.0, 13.0], "altitude_m": [20.0, 90.0],

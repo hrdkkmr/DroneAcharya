@@ -21,10 +21,10 @@ func _initialize() -> void:
 	AppState.selected_config = ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"]
 	await _visit("scenario_select", "scenario_select")
 	await _visit("briefing", "briefing")
-	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day", "swarm_uav", 40.0, 8.0)
-	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day_wide", "", 40.0, 70.0)
-	await _observe("res://scenarios/03_mixed_rural_night_degraded.json", "mixed_rural_night", "unidentified_uav", 30.0, 10.0)
-	await _observe("res://scenarios/04_single_urban_fog.json", "single_urban_fog", "unidentified_uav", 30.0, 30.0)
+	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day_sensor", "swarm_uav", 70.0, 6.0, true)
+	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day_eye", "", 70.0, 60.0, false)
+	await _observe("res://scenarios/03_mixed_rural_night_degraded.json", "mixed_rural_night_thermal", "unidentified_uav", 60.0, 8.0, true)
+	await _observe("res://scenarios/04_single_urban_fog.json", "single_urban_fog_eye", "unidentified_uav", 40.0, 40.0, false)
 	quit(0)
 
 
@@ -36,7 +36,7 @@ func _visit(scene: String, shot: String) -> void:
 
 
 ## Runs a scenario for `seconds`, aims at the first actor of `profile` (or the zone) and saves.
-func _observe(path: String, shot: String, profile: String, seconds: float, fov: float) -> void:
+func _observe(path: String, shot: String, profile: String, seconds: float, fov: float, sensor: bool) -> void:
 	AppState.selected_config = ScenarioConfig.load_file(path)["config"]
 	AppState.goto(self, "observation")
 	for i in 5:
@@ -53,8 +53,19 @@ func _observe(path: String, shot: String, profile: String, seconds: float, fov: 
 		if record["active"] and (profile.is_empty() or record["def"]["profile"] == profile):
 			target = record["state"].position
 			break
+	scene.set_sensor_view(sensor)
 	scene.observer.look_at_point(target)
 	scene.observer.set_fov(fov)
+	# Select the tracker track nearest the aim point (tracker output, as a trainee would).
+	var best := ""
+	var best_distance := INF
+	for track in scene.session.tracker.confirmed_tracks():
+		var d: float = (track["position"] as Vector3).distance_to(target)
+		if d < best_distance:
+			best_distance = d
+			best = track["id"]
+	if not best.is_empty():
+		scene.select_track(best)
 	var fps := []
 	for i in 120:
 		await process_frame

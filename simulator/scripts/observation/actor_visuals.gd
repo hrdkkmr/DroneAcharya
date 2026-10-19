@@ -6,7 +6,9 @@ extends Node3D
 const VISUAL_SCALE := 2.0
 
 var profile := ""
+var thermal := false
 var _wings: Array[Node3D] = []
+var _hot := StandardMaterial3D.new()
 var _flap_phase := 0.0
 
 
@@ -49,6 +51,18 @@ func _build(size: float) -> void:
 				var beacon := _mesh(_sphere(size * 0.06), Color(0.2, 1.0, 0.4), true)
 				beacon.position.y = size * 0.1
 				add_child(beacon)
+
+
+## Night sensor view: every mesh is drawn as a bright, unshaded heat signature.
+## Balloons are drawn dimmer (cooler) than motors or animals. Visual only.
+func set_thermal(enabled: bool) -> void:
+	if thermal == enabled:
+		return
+	thermal = enabled
+	_hot.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_hot.albedo_color = Color(0.55, 0.55, 0.55) if profile == "balloon" else Color(1, 1, 1)
+	for node in find_children("*", "MeshInstance3D", true, false):
+		(node as MeshInstance3D).material_override = _hot if enabled else null
 
 
 ## Places the visual at a simulated position and heading; flaps wings for birds.
