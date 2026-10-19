@@ -89,7 +89,7 @@ func _write(path: String, text: String) -> void:
 
 
 func test_missing_corrupt_or_mismatched_models_fail_safely() -> void:
-	var dir := "user://ml_test"
+	var dir := "user://test_runs/ml"
 	DirAccess.make_dir_recursive_absolute(dir)
 	var missing := MlClassifier.new()
 	assert_true(not missing.load_model(dir + "/nope.json") and "not found" in missing.error, "missing file")

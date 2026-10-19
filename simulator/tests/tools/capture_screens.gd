@@ -6,6 +6,11 @@ extends SceneTree
 
 const AppState := preload("res://scripts/app/app_state.gd")
 const ScenarioConfig := preload("res://scripts/sim/scenario_config.gd")
+const ThreatSession := preload("res://scripts/sim/threat_session.gd")
+const SessionRecord := preload("res://scripts/training/session_record.gd")
+const SessionIO := preload("res://scripts/training/session_io.gd")
+const Rubric := preload("res://scripts/training/rubric.gd")
+const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
 
 var out_dir := "user://captures"
 
@@ -26,7 +31,57 @@ func _initialize() -> void:
 	await _observe("res://scenarios/02_swarm_urban_day.json", "swarm_urban_day_eye", "", 70.0, 60.0, false)
 	await _observe("res://scenarios/03_mixed_rural_night_degraded.json", "mixed_rural_night_thermal", "unidentified_uav", 60.0, 8.0, true)
 	await _observe("res://scenarios/04_single_urban_fog.json", "single_urban_fog_eye", "unidentified_uav", 40.0, 40.0, false)
+	await _review_and_replay()
 	quit(0)
+
+
+## Plays a scripted session into a scratch history folder, then captures the
+## after-action review and the 3D replay with truth labels.
+func _review_and_replay() -> void:
+	AppState.sessions_dir = "user://test_runs/capture_sessions"
+	DirAccess.make_dir_recursive_absolute(AppState.sessions_dir)
+	for name in DirAccess.get_files_at(AppState.sessions_dir):
+		DirAccess.remove_absolute(AppState.sessions_dir.path_join(name))
+	var session := ThreatSession.new(ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"], MlClassifier.shared())
+	session.start()
+	while not session.is_finished():
+		session.step()
+		if session.tick() % 20 != 0:
+			continue
+		for track in session.tracker.confirmed_tracks():
+			var state := session.trainee_state(track["id"])
+			var advice: Dictionary = session.decisions.recommendation_for(track["id"])
+			if advice.is_empty() or session.time_s() < 30.0:
+				continue
+			if state.is_empty():
+				session.acknowledge(track["id"])
+			elif String(state["response"]).is_empty() and advice["rules"]["evidence"] == "good":
+				session.classify(track["id"], advice["rules"]["category"], 75)
+				session.respond(track["id"], advice["policy"]["response"])
+	var record := SessionRecord.build(session, "capture-review", "2026-10-20T12:00:00Z")
+	record["evaluation"] = Rubric.evaluate(record)
+	print("capture session saved: ", SessionIO.save(record, AppState.sessions_dir)["ok"])
+	AppState.review_session = record
+	await _visit("history", "history_review")
+	current_scene.replay_in_3d()
+	for i in 5:
+		await process_frame
+	var scene: Node = current_scene
+	scene.seek_replay(20 * 75)
+	scene.replay_playing = false
+	scene.set_truth_labels(true)
+	scene.hud.truth_toggle.set_pressed_no_signal(true)
+	scene.observer.set_sensor_mode(false)
+	var target := Vector3(0, 0, -300)
+	for actor in scene.session.world.actors:
+		if actor["active"] and actor["def"]["profile"] == "swarm_uav":
+			target = actor["state"].position
+			break
+	scene.observer.look_at_point(target)
+	scene.observer.set_fov(25.0)
+	for i in 30:
+		await process_frame
+	await _save("replay_truth_labels")
 
 
 func _visit(scene: String, shot: String) -> void:

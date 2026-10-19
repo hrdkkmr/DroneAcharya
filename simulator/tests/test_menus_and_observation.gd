@@ -229,3 +229,54 @@ func test_settings_screen_reports_models_and_toggles_ml() -> void:
 	var scene := await _wait_scene(AppState.SCENES["observation"])
 	assert_true(not scene.session.decisions.ml_active(), "observation runs rules-only when ML is off")
 	AppState.use_ml = true
+
+
+func test_exercise_to_review_to_3d_replay_and_back() -> void:
+	var dir: String = AppState.sessions_dir
+	DirAccess.make_dir_recursive_absolute(dir)
+	for name in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(dir.path_join(name))
+	var scene := await _start_observation("res://scenarios/01_single_rural_day.json", 25.0)
+	scene.set_truth_labels(true)
+	assert_true(scene.overlay.truth_labels.is_empty(), "no truth labels during a live exercise")
+	scene.cycle_track()
+	scene.acknowledge_selected()
+	scene.classify_selected("unknown", 30)
+	scene.respond_selected("request_identification")
+	while not scene.session.is_finished():
+		scene.session.step()
+	await tree.process_frame
+	await tree.process_frame
+	assert_true(scene.saved_path.begins_with(dir), "session saved to the history folder: " + scene.saved_path)
+	assert_true(scene.hud.review_button.visible, "review button offered")
+	var session_id: String = scene.record["session_id"]
+	scene.hud.review_requested.emit()
+	var history := await _wait_scene(AppState.SCENES["history"])
+	assert_eq(history.sessions.size(), 1, "one session in history")
+	assert_eq(history.selected["session_id"], session_id, "the finished session is selected")
+	assert_true("/ 100" in history.report_label.text and "Decision timeline" in history.report_label.text, "review shown")
+	assert_true(history.verify_replay()["identical"], "replay verified from the saved file")
+	assert_true("Replay verified" in history.status_label.text, "verification reported")
+	var exported: Dictionary = history.export_selected()
+	assert_true(exported["ok"], "exported")
+	var imported: Dictionary = history.import_file(exported["path"])
+	assert_eq([imported["ok"], imported["skipped"]], [true, 1], "re-importing the same session is a harmless duplicate")
+	history.replay_in_3d()
+	var replay_scene := await _wait_scene(AppState.SCENES["observation"])
+	assert_true(replay_scene.replay != null, "observation scene in replay mode")
+	assert_true(replay_scene.hud.replay_bar.visible and not replay_scene.hud.decision_panel.visible, "replay controls shown, decision controls hidden")
+	await wait_physics_frames(60)
+	assert_true(replay_scene.session.tick() > 0, "replay advancing")
+	replay_scene.seek_replay(20 * 30)
+	assert_eq(replay_scene.session.tick(), 600, "seek forward")
+	replay_scene.seek_replay(100)
+	assert_eq(replay_scene.session.tick(), 100, "seek backwards re-simulates from the start")
+	replay_scene.seek_replay(20 * 30)
+	replay_scene.set_truth_labels(true)
+	var labels: Array = replay_scene.overlay.truth_labels
+	assert_true(labels.any(func(l): return "A01" in l["text"] and "Unidentified UAV" in l["text"]), "truth labels available in replay")
+	var before: int = replay_scene.session.spam_count
+	replay_scene.acknowledge_selected()
+	assert_eq(replay_scene.session.spam_count, before, "trainee actions ignored during replay")
+	replay_scene.exit_to_menu()
+	await _wait_scene(AppState.SCENES["history"])

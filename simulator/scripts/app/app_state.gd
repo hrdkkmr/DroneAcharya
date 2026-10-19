@@ -20,6 +20,8 @@ static var review_session: Dictionary = {}
 static var replay_requested := false
 ## Settings: use the trained ML classifier (Model 2) in decision support when it loads.
 static var use_ml := true
+## Where session records are saved and read. Tests redirect this to a scratch folder.
+static var sessions_dir := "user://sessions"
 
 
 static func goto(tree: SceneTree, scene: String) -> void:

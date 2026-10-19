@@ -159,18 +159,19 @@ func acknowledge(track_id: String) -> Dictionary:
 
 
 func classify(track_id: String, category: String, confidence: int) -> Dictionary:
-	var check := _check_track(track_id, "classify")
+	var args := {"category": category, "confidence": confidence}
+	var check := _check_track(track_id, "classify", args)
 	if not check["ok"]:
 		return check
 	if not category in Vocabulary.CATEGORIES:
-		return _reject("classify", track_id, "Unknown category '%s'." % category, false)
+		return _reject("classify", track_id, "Unknown category '%s'." % category, false, args)
 	if confidence < 0 or confidence > 100:
-		return _reject("classify", track_id, "Confidence must be 0-100.", false)
+		return _reject("classify", track_id, "Confidence must be 0-100.", false, args)
 	var state := _state(track_id)
 	if state["acknowledged_t"] < 0.0:
-		return _reject("classify", track_id, "Acknowledge %s first (F)." % track_id, false)
+		return _reject("classify", track_id, "Acknowledge %s first (F)." % track_id, false, args)
 	if not String(state["response"]).is_empty():
-		return _reject("classify", track_id, "%s already has a final response." % track_id, true)
+		return _reject("classify", track_id, "%s already has a final response." % track_id, true, args)
 	state["classifications"] += 1
 	var spam: bool = state["classifications"] > MAX_CLASSIFICATIONS_PER_TRACK
 	if spam:
@@ -188,16 +189,17 @@ func classify(track_id: String, category: String, confidence: int) -> Dictionary
 
 
 func respond(track_id: String, response: String) -> Dictionary:
-	var check := _check_track(track_id, "respond")
+	var args := {"response": response}
+	var check := _check_track(track_id, "respond", args)
 	if not check["ok"]:
 		return check
 	if not response in Vocabulary.RESPONSES:
-		return _reject("respond", track_id, "Unknown response '%s'." % response, false)
+		return _reject("respond", track_id, "Unknown response '%s'." % response, false, args)
 	var state := _state(track_id)
 	if String(state["category"]).is_empty():
-		return _reject("respond", track_id, "Classify %s before choosing a response." % track_id, false)
+		return _reject("respond", track_id, "Classify %s before choosing a response." % track_id, false, args)
 	if not String(state["response"]).is_empty():
-		return _reject("respond", track_id, "%s already has a final response." % track_id, true)
+		return _reject("respond", track_id, "%s already has a final response." % track_id, true, args)
 	var members := _targets(track_id) if state["category"] == "swarm" else [track_id]
 	for id in members:
 		var s := _state(id)
@@ -215,12 +217,12 @@ func trainee_state(track_id: String) -> Dictionary:
 	return trainee.get(track_id, {})
 
 
-func _check_track(track_id: String, kind: String) -> Dictionary:
+func _check_track(track_id: String, kind: String, args := {}) -> Dictionary:
 	if status != Status.RUNNING:
 		return {"ok": false, "message": "Resume the exercise first."}
 	var track: Dictionary = tracker.tracks.get(track_id, {})
 	if track.is_empty() or track["status"] == "tentative":
-		return _reject(kind, track_id, "No confirmed track '%s'." % track_id, true)
+		return _reject(kind, track_id, "No confirmed track '%s'." % track_id, true, args)
 	return {"ok": true}
 
 
@@ -246,10 +248,12 @@ func _accept(kind: String, track_id: String, data: Dictionary, message: String) 
 	return {"ok": true, "message": message}
 
 
-func _reject(kind: String, track_id: String, message: String, spam: bool) -> Dictionary:
+func _reject(kind: String, track_id: String, message: String, spam: bool, args := {}) -> Dictionary:
 	if spam:
 		spam_count += 1
-	log_event("action", {"kind": kind, "track_id": track_id, "valid": false, "spam": spam, "message": message})
+	var data := {"kind": kind, "track_id": track_id, "valid": false, "spam": spam, "message": message}
+	data.merge(args)
+	log_event("action", data)
 	return {"ok": false, "message": message}
 
 

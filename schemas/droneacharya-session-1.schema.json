@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://droneacharya.local/schemas/droneacharya-session-1.schema.json",
+  "title": "DroneAcharya session record, format version 1",
+  "description": "One synthetic training exercise. Structural rules only; semantic rules (event order, references, recompute-and-compare of the evaluation) are enforced by simulator/scripts/training/session_io.gd and documented in docs/DRONEACHARYA_SESSION_SCHEMA.md. Synthetic training data; not operational data.",
+  "type": "object",
+  "required": ["format", "format_version", "session_id", "created_at", "scenario", "generator", "tick_rate", "status",
+               "end_tick", "end_t", "models", "spam_count", "events", "observations", "tracks", "truth", "evaluation"],
+  "properties": {
+    "format": {"const": "droneacharya-session"},
+    "format_version": {"const": 1},
+    "session_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$"},
+    "created_at": {"type": "string", "minLength": 10},
+    "scenario": {"$ref": "#/$defs/scenario"},
+    "generator": {"type": "string"},
+    "tick_rate": {"const": 20},
+    "status": {"enum": ["completed", "aborted"]},
+    "end_tick": {"type": "integer", "minimum": 0},
+    "end_t": {"type": "number", "minimum": 0},
+    "models": {
+      "type": "object",
+      "required": ["features", "rules", "policy", "ml"],
+      "properties": {
+        "features": {"type": "string"},
+        "rules": {"type": "string"},
+        "policy": {"type": "string"},
+        "ml": {"type": "object", "required": ["loaded"], "properties": {"loaded": {"type": "boolean"}, "version": {"type": "string"}}}
+      }
+    },
+    "spam_count": {"type": "integer", "minimum": 0},
+    "events": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/event"}},
+    "observations": {
+      "type": "object",
+      "required": ["columns", "rows"],
+      "properties": {
+        "columns": {"const": ["id", "sensor", "t", "t_delivered", "bearing_deg", "elevation_deg", "range_m", "quality",
+                              "degraded", "id_reply", "id_quality", "apparent_size_m", "flap_detected"]},
+        "rows": {"type": "array", "items": {
+          "type": "array", "minItems": 13, "maxItems": 13,
+          "prefixItems": [
+            {"type": "string"}, {"enum": ["radar", "eo"]}, {"type": "number", "minimum": 0}, {"type": "number", "minimum": 0},
+            {"type": "number", "minimum": 0, "maximum": 360}, {"type": "number", "minimum": -90, "maximum": 90}, {"type": "number", "minimum": 0},
+            {"type": "number", "minimum": 0, "maximum": 1}, {"type": "boolean"}, {"type": "boolean"}, {"type": "boolean"},
+            {"type": "number"}, {"type": "boolean"}
+          ]
+        }}
+      }
+    },
+    "tracks": {"type": "array", "items": {
+      "type": "object",
+      "required": ["id", "status", "created_t", "confirmed_t", "retired_t", "hits", "obs_ids"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^T[0-9]{3,}$"},
+        "status": {"enum": ["tentative", "confirmed", "coasting", "lost", "dropped"]},
+        "created_t": {"type": "number"}, "confirmed_t": {"type": "number"}, "retired_t": {"type": "number"},
+        "hits": {"type": "integer", "minimum": 0},
+        "obs_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    }},
+    "truth": {
+      "description": "Ground truth for assessment and replay only. Never available to the trainee or the decision models during the exercise.",
+      "type": "object",
+      "required": ["actors", "links", "events", "availability", "protected_zone_radius_m"],
+      "properties": {
+        "actors": {"type": "array", "items": {
+          "type": "object",
+          "required": ["id", "profile", "behavior", "truth_category", "significant", "group_id", "spawn_tick"],
+          "properties": {
+            "id": {"type": "string"},
+            "profile": {"enum": ["bird", "balloon", "authorised_uav", "unidentified_uav", "swarm_uav"]},
+            "truth_category": {"enum": ["routine", "review", "background"]},
+            "significant": {"type": "boolean"},
+            "group_id": {"type": "string"}
+          }
+        }},
+        "links": {"type": "object", "additionalProperties": {"type": "string"}},
+        "events": {"type": "array"},
+        "availability": {"type": "array", "items": {
+          "type": "object", "required": ["t", "active", "id", "zone"],
+          "properties": {"t": {"type": "number"}, "active": {"type": "array"}, "id": {"type": "array"}, "zone": {"type": "array"}}
+        }},
+        "protected_zone_radius_m": {"type": "number"}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": ["rubric", "score", "weighted_score", "penalty_points", "components", "entities", "findings", "comparable", "eligible_entities"],
+      "properties": {
+        "rubric": {"const": "da-rubric-1"},
+        "score": {"type": "number", "minimum": 0, "maximum": 100},
+        "weighted_score": {"type": "number", "minimum": 0, "maximum": 100},
+        "penalty_points": {"type": "number", "minimum": 0},
+        "components": {
+          "type": "object",
+          "required": ["detection", "classification", "evidence", "response", "response_time", "degraded"],
+          "additionalProperties": {
+            "type": "object", "required": ["score", "weight", "effective_weight", "earned", "n"],
+            "properties": {"score": {"type": "number", "minimum": 0, "maximum": 100}}
+          }
+        },
+        "entities": {"type": "array"},
+        "findings": {"type": "array", "items": {
+          "type": "object", "required": ["rule", "entity", "points", "penalty", "reason", "event_seqs"]
+        }},
+        "comparable": {"type": "boolean"},
+        "eligible_entities": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": ["seq", "tick", "t", "type", "data"],
+      "properties": {
+        "seq": {"type": "integer", "minimum": 1},
+        "tick": {"type": "integer", "minimum": 0},
+        "t": {"type": "number", "minimum": 0},
+        "type": {"enum": ["started", "paused", "resumed", "finished", "sensor_degraded", "sensor_restored", "track_created",
+                          "track_confirmed", "track_coasting", "track_reacquired", "track_lost", "track_dropped",
+                          "model_output", "action", "decision_support_visible"]},
+        "data": {"type": "object"}
+      },
+      "allOf": [{
+        "if": {"properties": {"type": {"const": "action"}}},
+        "then": {"properties": {"data": {
+          "type": "object", "required": ["kind", "track_id", "valid"],
+          "properties": {"kind": {"enum": ["acknowledge", "classify", "respond"]}, "valid": {"type": "boolean"},
+                         "category": {"type": "string"}, "response": {"type": "string"},
+                         "confidence": {"type": "integer", "minimum": -1}}
+        }}}
+      }]
+    },
+    "scenario": {
+      "type": "object",
+      "required": ["format", "version", "id", "seed", "environment", "time_of_day", "visibility", "duration_s",
+                   "difficulty", "groups", "sensor", "weights", "wind", "protected_zone_radius_m", "group_swarms"],
+      "properties": {
+        "format": {"const": "droneacharya-scenario"},
+        "version": {"const": 1},
+        "seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "environment": {"enum": ["urban", "rural"]},
+        "time_of_day": {"enum": ["day", "night"]},
+        "visibility": {"enum": ["clear", "haze", "fog"]},
+        "duration_s": {"type": "integer", "minimum": 60, "maximum": 600},
+        "difficulty": {"type": "integer", "minimum": 1, "maximum": 5},
+        "group_swarms": {"type": "boolean"}
+      }
+    }
+  }
+}

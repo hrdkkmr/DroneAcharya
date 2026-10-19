@@ -14,6 +14,8 @@ var session: RefCounted
 var camera: Camera3D
 var selected_id := ""
 var markers: Array = [] ## {id, point, track, world_position} from the last update
+## Review/replay only: [{position: Vector3, text: String}] drawn as ground-truth labels.
+var truth_labels: Array = []
 var _screen_positions := {} ## track id -> Vector2
 
 
@@ -77,6 +79,13 @@ func _draw() -> void:
 			text += "  no update %.1f s" % (now - float(track["last_update_t"]))
 		draw_string_outline(font, point + Vector2(16, -10), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Color.BLACK)
 		draw_string(font, point + Vector2(16, -10), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
+	for item in truth_labels:
+		var p: Vector3 = item["position"]
+		if camera.is_position_behind(p):
+			continue
+		var at := camera.unproject_position(p) + Vector2(0, 30)
+		draw_string_outline(font, at, item["text"], HORIZONTAL_ALIGNMENT_CENTER, -1, 14, 4, Color.BLACK)
+		draw_string(font, at, item["text"], HORIZONTAL_ALIGNMENT_CENTER, -1, 14, Color(1.0, 0.6, 0.9))
 	for gid in session.tracker.groups:
 		var group: Dictionary = session.tracker.groups[gid]
 		var centroid: Vector3 = group["centroid"]

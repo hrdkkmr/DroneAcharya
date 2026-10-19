@@ -12,6 +12,11 @@ signal acknowledge_requested
 signal classify_requested(category: String, confidence: int)
 signal respond_requested(response: String)
 signal decision_support_toggled(visible: bool)
+signal review_requested
+signal replay_play_toggled
+signal replay_speed_changed(speed: float)
+signal replay_seek_requested(tick: int)
+signal truth_labels_toggled(visible: bool)
 
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
@@ -36,6 +41,15 @@ var response_option: OptionButton
 var feedback_label: Label
 var support_toggle: CheckBox
 var support_label: RichTextLabel
+var decision_panel: PanelContainer
+var review_button: Button
+var replay_bar: PanelContainer
+var replay_slider: HSlider
+var replay_time: Label
+var replay_play: Button
+var truth_toggle: CheckBox
+var _replay_end := 1
+var _slider_updating := false
 
 var _rows := {} ## track id -> TreeItem
 var _refresh_left := 0.0
@@ -114,6 +128,7 @@ func _ready() -> void:
 func _build_decision_panel() -> void:
 	var panel := UiKit.panel()
 	panel.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
+	decision_panel = panel
 	var rows := UiKit.vbox(6)
 	panel.add_child(rows)
 	left_column.add_child(panel)
@@ -197,11 +212,74 @@ func _build_overlay() -> void:
 	buttons.name = "Buttons"
 	buttons.add_child(UiKit.button("Resume", func(): resume_requested.emit(), 140))
 	buttons.add_child(UiKit.button("Restart", func(): restart_requested.emit(), 140))
-	buttons.add_child(UiKit.button("Exit to menu", func(): exit_requested.emit(), 160))
+	buttons.add_child(UiKit.button("Exit", func(): exit_requested.emit(), 100))
+	review_button = UiKit.button("After-action review", func(): review_requested.emit(), 200)
+	review_button.visible = false
+	buttons.add_child(review_button)
 	rows.add_child(buttons)
 	overlay.add_child(rows)
 	overlay.visible = false
 	add_child(overlay)
+	_build_replay_bar()
+
+
+func _build_replay_bar() -> void:
+	replay_bar = UiKit.panel(0.85)
+	replay_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	replay_bar.custom_minimum_size = Vector2(620, 0)
+	replay_bar.position += Vector2(-310 - RIGHT_WIDTH / 2.0 + LEFT_WIDTH / 2.0, -70)
+	var row := UiKit.hbox(8)
+	replay_bar.add_child(row)
+	row.add_child(UiKit.label("REPLAY", 15, UiKit.ACCENT))
+	replay_play = UiKit.button("Pause", func(): replay_play_toggled.emit(), 80)
+	row.add_child(replay_play)
+	var speed := OptionButton.new()
+	for s in ["1×", "2×", "4×", "8×"]:
+		speed.add_item(s)
+	speed.item_selected.connect(func(i): replay_speed_changed.emit([1.0, 2.0, 4.0, 8.0][i]))
+	row.add_child(speed)
+	replay_slider = HSlider.new()
+	replay_slider.custom_minimum_size = Vector2(200, 0)
+	replay_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	replay_slider.value_changed.connect(_on_slider)
+	row.add_child(replay_slider)
+	replay_time = UiKit.label("00:00", 15)
+	row.add_child(replay_time)
+	truth_toggle = CheckBox.new()
+	truth_toggle.text = "Truth labels"
+	truth_toggle.toggled.connect(func(on): truth_labels_toggled.emit(on))
+	row.add_child(truth_toggle)
+	replay_bar.visible = false
+	add_child(replay_bar)
+
+
+func _on_slider(value: float) -> void:
+	if not _slider_updating:
+		replay_seek_requested.emit(int(value))
+
+
+## Replay mode hides trainee decision controls and shows the replay bar.
+func set_replay_mode(enabled: bool, end_tick: int) -> void:
+	replay_bar.visible = enabled
+	decision_panel.visible = not enabled
+	review_button.visible = false
+	_replay_end = maxi(end_tick, 1)
+	replay_slider.max_value = _replay_end
+	_slider_updating = true
+	replay_slider.value = 0
+	_slider_updating = false
+
+
+func update_replay(tick: int, playing: bool) -> void:
+	_slider_updating = true
+	replay_slider.value = tick
+	_slider_updating = false
+	replay_play.text = "Pause" if playing else "Play"
+	replay_time.text = "%s / %s" % [clock(tick / 20.0), clock(_replay_end / 20.0)]
+
+
+func set_review_available(available: bool) -> void:
+	review_button.visible = available
 
 
 func show_overlay(title: String, detail: String) -> void:
