@@ -4,6 +4,7 @@ extends SceneTree
 ## Optional: append `-- --dir=res://some/folder` to run tests from another folder.
 ## Runs every `test_*` method in every `test_*.gd` file of the folder. A test fails
 ## if an assertion fails or if any engine/script error is logged while it runs.
+## Tests may `await` frames (see test_case.gd); each one gets `tree` set to this SceneTree.
 ## Exit code: 0 when all tests pass, 1 otherwise (including when no tests are found).
 
 const DEFAULT_DIR := "res://tests"
@@ -38,6 +39,8 @@ func _initialize() -> void:
 	var passed := 0
 	var failed := 0
 	print("Running tests in %s" % dir_path)
+	# Nodes added to the root are not inside the tree until the first frame has run.
+	await process_frame
 	capture.take()
 	for path in files:
 		var script: GDScript = load(path)
@@ -51,7 +54,9 @@ func _initialize() -> void:
 			if not name.begins_with("test_"):
 				continue
 			var test: Object = script.new()
-			test.call(name)
+			test.tree = self
+			await test.call(name)
+			await test.cleanup()
 			var problems: Array[String] = []
 			problems.append_array(test.failures)
 			for error in capture.take():

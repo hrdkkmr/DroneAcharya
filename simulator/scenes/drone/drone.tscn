@@ -1,0 +1,118 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/drone/drone_controller.gd" id="1_ctrl"]
+
+[sub_resource type="BoxShape3D" id="Shape_body"]
+size = Vector3(1.0, 0.35, 1.0)
+
+[sub_resource type="StandardMaterial3D" id="Mat_body"]
+albedo_color = Color(0.16, 0.18, 0.2, 1)
+metallic = 0.3
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_arm"]
+albedo_color = Color(0.45, 0.47, 0.5, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Mat_rotor"]
+albedo_color = Color(0.08, 0.08, 0.08, 1)
+roughness = 0.4
+
+[sub_resource type="StandardMaterial3D" id="Mat_nose"]
+albedo_color = Color(0.9, 0.12, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.15, 0.1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_tail"]
+albedo_color = Color(0.1, 0.8, 0.3, 1)
+emission_enabled = true
+emission = Color(0.1, 1, 0.35, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="BoxMesh" id="Mesh_body"]
+material = SubResource("Mat_body")
+size = Vector3(0.45, 0.14, 0.55)
+
+[sub_resource type="BoxMesh" id="Mesh_arm"]
+material = SubResource("Mat_arm")
+size = Vector3(1.15, 0.05, 0.08)
+
+[sub_resource type="CylinderMesh" id="Mesh_rotor"]
+material = SubResource("Mat_rotor")
+top_radius = 0.22
+bottom_radius = 0.22
+height = 0.02
+radial_segments = 24
+
+[sub_resource type="BoxMesh" id="Mesh_nose"]
+material = SubResource("Mat_nose")
+size = Vector3(0.16, 0.06, 0.08)
+
+[sub_resource type="BoxMesh" id="Mesh_tail"]
+material = SubResource("Mat_tail")
+size = Vector3(0.12, 0.05, 0.06)
+
+[sub_resource type="BoxMesh" id="Mesh_skid"]
+material = SubResource("Mat_arm")
+size = Vector3(0.04, 0.04, 0.6)
+
+[node name="Drone" type="CharacterBody3D" groups=["drone"]]
+script = ExtResource("1_ctrl")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
+shape = SubResource("Shape_body")
+
+[node name="Visual" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+mesh = SubResource("Mesh_body")
+
+[node name="ArmA" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, 0, 0.03, 0)
+mesh = SubResource("Mesh_arm")
+
+[node name="ArmB" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.7071068, 0, 0.7071068, 0, 1, 0, -0.7071068, 0, 0.7071068, 0, 0.03, 0)
+mesh = SubResource("Mesh_arm")
+
+[node name="Nose" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3)
+mesh = SubResource("Mesh_nose")
+
+[node name="Tail" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3)
+mesh = SubResource("Mesh_tail")
+
+[node name="SkidLeft" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, -0.15, 0)
+mesh = SubResource("Mesh_skid")
+
+[node name="SkidRight" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.15, 0)
+mesh = SubResource("Mesh_skid")
+
+[node name="Rotors" type="Node3D" parent="Visual"]
+
+[node name="RotorFrontLeft" type="MeshInstance3D" parent="Visual/Rotors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.08, -0.4)
+mesh = SubResource("Mesh_rotor")
+
+[node name="RotorFrontRight" type="MeshInstance3D" parent="Visual/Rotors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.08, -0.4)
+mesh = SubResource("Mesh_rotor")
+
+[node name="RotorBackLeft" type="MeshInstance3D" parent="Visual/Rotors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.08, 0.4)
+mesh = SubResource("Mesh_rotor")
+
+[node name="RotorBackRight" type="MeshInstance3D" parent="Visual/Rotors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.08, 0.4)
+mesh = SubResource("Mesh_rotor")
+
+[node name="OnboardCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9902681, 0.1391731, 0, -0.1391731, 0.9902681, 0, 0.3, -0.4)
+fov = 80.0
+near = 0.05
