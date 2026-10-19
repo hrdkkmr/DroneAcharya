@@ -68,6 +68,21 @@ func eo_id_range_m() -> float:
 	return minf(float(_eo["id_range_m"]), eo_range_m())
 
 
+## Ground-truth geometry check used ONLY for assessment (never for inference):
+## is this object genuinely available at identification quality right now? That is
+## inside the camera's identification range and field of view with clear line of
+## sight, or a cooperative object inside radar coverage. No randomness.
+func identification_available(target: Dictionary) -> bool:
+	var offset: Vector3 = target["position"] - observer
+	var distance := offset.length()
+	if _eo["enabled"] and distance <= eo_id_range_m() and in_eo_field_of_view(offset) and line_of_sight(observer, target["position"]) == "clear":
+		return true
+	if _radar["enabled"] and target["id_reply"] and distance <= float(_radar["range_m"]):
+		var elevation := rad_to_deg(asin(clampf(offset.y / maxf(distance, 0.001), -1.0, 1.0)))
+		return elevation <= float(_radar["max_elevation_deg"]) and line_of_sight(observer, target["position"]) != "blocked"
+	return false
+
+
 ## True when a direction (relative to the observer) lies inside the camera's azimuth sector.
 func in_eo_field_of_view(offset: Vector3) -> bool:
 	var fov := float(_eo["fov_deg"])

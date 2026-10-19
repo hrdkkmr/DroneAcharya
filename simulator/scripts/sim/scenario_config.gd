@@ -49,6 +49,9 @@ static func validate(raw: Variant) -> Dictionary:
 	c["duration_s"] = _int(src, "duration_s", 60, 600, errors)
 	c["difficulty"] = _int(src, "difficulty", 1, 5, errors, 1)
 	c["protected_zone_radius_m"] = _number(src, "protected_zone_radius_m", 40.0, 400.0, errors, 120.0)
+	c["group_swarms"] = src.get("group_swarms", true)
+	if typeof(c["group_swarms"]) != TYPE_BOOL:
+		errors.append("group_swarms must be true or false")
 	var wind: Dictionary = src.get("wind", {}) if typeof(src.get("wind", {})) == TYPE_DICTIONARY else {}
 	c["wind"] = {
 		"speed_mps": _number(wind, "speed_mps", 0.0, 15.0, errors, 3.0, "wind."),
@@ -109,7 +112,7 @@ static func generate(scenario_seed: int, options: Dictionary = {}) -> Dictionary
 		"description": "Generated from seed %d." % scenario_seed,
 		"seed": scenario_seed, "environment": environment, "time_of_day": time_of_day,
 		"visibility": visibility, "duration_s": duration, "difficulty": difficulty,
-		"protected_zone_radius_m": 120.0,
+		"protected_zone_radius_m": 120.0, "group_swarms": true,
 		"wind": {"speed_mps": snappedf(rng.randf_range(1.0, 6.0), 0.1), "direction_deg": float(rng.randi() % 360)},
 		"groups": groups, "sensor": sensor, "weights": DEFAULT_WEIGHTS.duplicate(),
 	}

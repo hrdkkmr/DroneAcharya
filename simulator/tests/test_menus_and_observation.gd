@@ -180,3 +180,33 @@ func test_details_explain_coasting_and_lost_tracks() -> void:
 	assert_true("extrapolated, not observed" in text, "coasting track explained")
 	scene.session.tracker._retire(track, "lost", scene.session.time_s())
 	assert_true("lost at" in scene.hud.track_details(scene.session, track["id"]), "lost track explained")
+
+
+func test_classification_workflow_through_the_scene_and_scoring_at_the_end() -> void:
+	var scene := await _start_observation("res://scenarios/01_single_rural_day.json", 30.0)
+	scene.cycle_track()
+	var id: String = scene.selected_track
+	assert_true(not id.is_empty(), "a track is selected")
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_F
+	key.pressed = true
+	Input.parse_input_event(key)
+	await tree.process_frame
+	await tree.process_frame
+	assert_true(scene.session.trainee_state(id).get("acknowledged_t", -1.0) >= 0.0, "F acknowledges the selected track")
+	scene.hud.classify_requested.emit("unidentified_uav", 60)
+	scene.hud.respond_requested.emit("notify_supervisor")
+	var state: Dictionary = scene.session.trainee_state(id)
+	assert_eq([state["category"], state["response"]], ["unidentified_uav", "notify_supervisor"], "classification and response recorded")
+	scene.hud.refresh(scene.session, id, scene.view_text(), 1.0)
+	assert_true("Rule-based baseline (not ML)" in scene.hud.support_label.text, "decision support labelled by method")
+	assert_true("Recommended:" in scene.hud.support_label.text, "recommendation shown with a reason")
+	scene.hud.support_toggle.button_pressed = false
+	assert_true(scene.session.events.any(func(e): return e["type"] == "decision_support_visible"), "hiding decision support is logged")
+	while not scene.session.is_finished():
+		scene.session.step()
+	await tree.process_frame
+	await tree.process_frame
+	assert_true(not scene.evaluation.is_empty(), "session scored at the end")
+	assert_true(scene.hud.overlay.visible and "Score" in scene.hud.overlay_detail.text, "score shown")
+	assert_eq(scene.record["evaluation"]["rubric"], "da-rubric-1", "record carries the evaluation")

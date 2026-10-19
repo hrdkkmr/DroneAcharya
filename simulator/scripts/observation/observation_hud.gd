@@ -8,9 +8,15 @@ signal centre_requested
 signal resume_requested
 signal restart_requested
 signal exit_requested
+signal acknowledge_requested
+signal classify_requested(category: String, confidence: int)
+signal respond_requested(response: String)
+signal decision_support_toggled(visible: bool)
 
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
 const RIGHT_WIDTH := 480.0
+const LEFT_WIDTH := 430.0
 
 var info_label: Label
 var sensor_label: RichTextLabel
@@ -20,7 +26,16 @@ var overlay: PanelContainer
 var overlay_title: Label
 var overlay_detail: Label
 var right_column: VBoxContainer
+var left_column: VBoxContainer
 var sensor_shade: ColorRect
+var trainee_label: Label
+var category_option: OptionButton
+var confidence_slider: HSlider
+var confidence_label: Label
+var response_option: OptionButton
+var feedback_label: Label
+var support_toggle: CheckBox
+var support_label: RichTextLabel
 
 var _rows := {} ## track id -> TreeItem
 var _refresh_left := 0.0
@@ -45,7 +60,9 @@ func _ready() -> void:
 
 	var left := UiKit.vbox(8)
 	left.position = Vector2(16, 48)
-	left.custom_minimum_size = Vector2(420, 0)
+	left.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
+	left.size = Vector2(LEFT_WIDTH, 0)
+	left_column = left
 	add_child(left)
 	var info_panel := UiKit.panel()
 	info_label = UiKit.label("", 17)
@@ -86,11 +103,75 @@ func _ready() -> void:
 	details_panel.add_child(details_label)
 	right_column.add_child(details_panel)
 	right_column.add_child(UiKit.button("Centre view on selected track", func(): centre_requested.emit()))
+	_build_decision_panel()
 
 	var help := UiKit.label("Right-drag / W A S D: look · Wheel: zoom · V: eye/sensor · Tab: next track · Click marker: select · Esc: pause · R: restart", 14, UiKit.MUTED)
 	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 16)
 	add_child(help)
 	_build_overlay()
+
+
+func _build_decision_panel() -> void:
+	var panel := UiKit.panel()
+	panel.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
+	var rows := UiKit.vbox(6)
+	panel.add_child(rows)
+	left_column.add_child(panel)
+	rows.add_child(UiKit.heading("Your assessment"))
+	trainee_label = UiKit.label("", 15, Color.WHITE, true)
+	rows.add_child(trainee_label)
+	rows.add_child(UiKit.button("Acknowledge track (F)", func(): acknowledge_requested.emit()))
+	var classify_row := UiKit.hbox(6)
+	category_option = OptionButton.new()
+	for category in Vocabulary.CATEGORIES:
+		category_option.add_item(Vocabulary.CATEGORY_LABELS[category])
+	category_option.select(Vocabulary.CATEGORIES.find("unknown"))
+	category_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	category_option.custom_minimum_size = Vector2(150, 0)
+	category_option.clip_text = true
+	classify_row.add_child(category_option)
+	confidence_slider = HSlider.new()
+	confidence_slider.min_value = 0
+	confidence_slider.max_value = 100
+	confidence_slider.step = 5
+	confidence_slider.value = 50
+	confidence_slider.custom_minimum_size = Vector2(70, 0)
+	confidence_label = UiKit.label("50%", 15)
+	confidence_slider.value_changed.connect(func(v): confidence_label.text = "%d%%" % int(v))
+	classify_row.add_child(confidence_slider)
+	classify_row.add_child(confidence_label)
+	classify_row.add_child(UiKit.button("Classify", func(): classify_requested.emit(Vocabulary.CATEGORIES[category_option.selected], int(confidence_slider.value))))
+	rows.add_child(classify_row)
+	var respond_row := UiKit.hbox(6)
+	response_option = OptionButton.new()
+	for response in Vocabulary.RESPONSES:
+		response_option.add_item(Vocabulary.RESPONSE_LABELS[response])
+	response_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	response_option.custom_minimum_size = Vector2(150, 0)
+	response_option.clip_text = true
+	respond_row.add_child(response_option)
+	respond_row.add_child(UiKit.button("Submit", func(): respond_requested.emit(Vocabulary.RESPONSES[response_option.selected])))
+	rows.add_child(respond_row)
+	feedback_label = UiKit.label("", 15, UiKit.ACCENT, true)
+	rows.add_child(feedback_label)
+	support_toggle = CheckBox.new()
+	support_toggle.text = "Show decision support"
+	support_toggle.button_pressed = true
+	support_toggle.toggled.connect(_on_support_toggled)
+	rows.add_child(support_toggle)
+	support_label = _rich(14)
+	support_label.fit_content = true
+	rows.add_child(support_label)
+
+
+func _on_support_toggled(on: bool) -> void:
+	support_label.visible = on
+	decision_support_toggled.emit(on)
+
+
+func show_feedback(text: String, ok: bool) -> void:
+	feedback_label.text = text
+	feedback_label.add_theme_color_override("font_color", UiKit.GOOD if ok else UiKit.WARN)
 
 
 func _rich(size: int) -> RichTextLabel:
@@ -147,6 +228,8 @@ func refresh(session: RefCounted, selected_id: String, view_text: String, delta:
 	sensor_label.text = sensor_text(session, view_text)
 	_refresh_tracks(session, selected_id)
 	details_label.text = track_details(session, selected_id)
+	trainee_label.text = trainee_text(session, selected_id)
+	support_label.text = decision_support_text(session, selected_id)
 	if sensor_shade.visible:
 		(sensor_shade.material as ShaderMaterial).set_shader_parameter("seed", randf() * 100.0)
 
@@ -242,6 +325,43 @@ static func track_details(session: RefCounted, track_id: String) -> String:
 			total += float(s)
 		lines.append("Apparent size ≈ %.2f m · wing beat seen %d of %d" % [total / track["sizes"].size(), track["flaps"], track["eo_id_hits"]])
 	lines.append("Mean signal quality %.2f · %d observation(s) during degradation" % [float(track["quality_sum"]) / maxf(float(track["hits"]), 1.0), track["degraded_hits"]])
+	return "\n".join(lines)
+
+
+static func trainee_text(session: RefCounted, track_id: String) -> String:
+	if track_id.is_empty():
+		return "No track selected."
+	var state: Dictionary = session.trainee_state(track_id)
+	if state.is_empty():
+		return "%s: not yet acknowledged." % track_id
+	var parts := PackedStringArray(["%s: acknowledged %s" % [track_id, clock(float(state["acknowledged_t"]))]])
+	if not String(state["category"]).is_empty():
+		parts.append("classified %s (%d%%)" % [Vocabulary.CATEGORY_LABELS[state["category"]], state["confidence"]])
+	if not String(state["response"]).is_empty():
+		parts.append("response: %s (final)" % Vocabulary.RESPONSE_LABELS[state["response"]])
+	return " · ".join(parts)
+
+
+## Decision-support outputs for the selected track, labelled by method.
+static func decision_support_text(session: RefCounted, track_id: String) -> String:
+	if track_id.is_empty():
+		return ""
+	var entry: Dictionary = session.decisions.recommendation_for(track_id)
+	if entry.is_empty():
+		return "[i]Decision support: waiting for the first assessment (once per second).[/i]"
+	var rules: Dictionary = entry["rules"]
+	var lines := PackedStringArray(["[b]Decision support[/b] [i](synthetic training aid; confidence is a score, not a probability)[/i]"])
+	lines.append("Rule-based baseline (not ML): %s · score %.2f · evidence %s" % [Vocabulary.CATEGORY_LABELS[rules["category"]], rules["confidence"], rules["evidence"]])
+	lines.append("  %s" % rules["explanation"])
+	var ml: Dictionary = entry["ml"]
+	if not ml.is_empty():
+		if ml.get("ok", false):
+			lines.append("ML classifier %s: %s · score %.2f" % [ml["model"], Vocabulary.CATEGORY_LABELS[ml["category"]], ml["confidence"]])
+		else:
+			lines.append("ML classifier unavailable (%s); using the rule-based baseline." % ml.get("error", "error"))
+	var policy: Dictionary = entry["policy"]
+	lines.append("Recommended: [b]%s[/b] (%s, from %s)" % [Vocabulary.RESPONSE_LABELS[policy["response"]], policy["reason_code"], policy["based_on"]])
+	lines.append("  %s" % policy["explanation"])
 	return "\n".join(lines)
 
 

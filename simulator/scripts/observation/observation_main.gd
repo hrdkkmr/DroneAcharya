@@ -11,6 +11,8 @@ const EnvironmentBuilder := preload("res://scripts/observation/environment_build
 const ActorVisuals := preload("res://scripts/observation/actor_visuals.gd")
 const ObservationHud := preload("res://scripts/observation/observation_hud.gd")
 const TrackOverlay := preload("res://scripts/observation/track_overlay.gd")
+const SessionRecord := preload("res://scripts/training/session_record.gd")
+const Rubric := preload("res://scripts/training/rubric.gd")
 const DEFAULT_SCENARIO := "res://scenarios/01_single_rural_day.json"
 
 var session: ThreatSession
@@ -19,6 +21,8 @@ var selected_track := ""
 var sensor_view := false
 var hud: ObservationHud
 var overlay: TrackOverlay
+var record: Dictionary = {} ## built when the exercise ends
+var evaluation: Dictionary = {}
 
 var _accumulator := 0.0
 var _previous := {} ## actor id -> position at the previous tick (smooth rendering only)
@@ -46,6 +50,10 @@ func _ready() -> void:
 	hud.resume_requested.connect(toggle_pause)
 	hud.restart_requested.connect(start_session)
 	hud.exit_requested.connect(exit_to_menu)
+	hud.acknowledge_requested.connect(acknowledge_selected)
+	hud.classify_requested.connect(classify_selected)
+	hud.respond_requested.connect(respond_selected)
+	hud.decision_support_toggled.connect(_on_decision_support_toggled)
 	start_session()
 
 
@@ -69,6 +77,8 @@ func start_session() -> void:
 	overlay.selected_id = ""
 	_accumulator = 0.0
 	_end_shown = false
+	record = {}
+	evaluation = {}
 	hud.overlay.visible = false
 	get_tree().paused = false
 	set_sensor_view(false)
@@ -105,7 +115,44 @@ func _process(delta: float) -> void:
 	hud.refresh(session, selected_track, view_text(), delta)
 	if session.is_finished() and not _end_shown:
 		_end_shown = true
-		hud.show_overlay("Exercise ended", "The scenario duration has been reached.")
+		finish_and_score()
+
+
+## Builds the session record and scores it with da-rubric-1.
+func finish_and_score() -> void:
+	var created := Time.get_datetime_string_from_system(true) + "Z"
+	record = SessionRecord.build(session, "da-%d-%d" % [int(config["seed"]), int(Time.get_unix_time_from_system())], created)
+	evaluation = Rubric.evaluate(record)
+	record["evaluation"] = evaluation
+	var c: Dictionary = evaluation["components"]
+	var degraded_text: String = "%.0f" % c["degraded"]["score"] if c["degraded"]["n"] > 0 else "n/a"
+	var detail := "Score %.1f / 100 (%.1f weighted − %.1f penalties)%s\nDetection %.0f · Classification %.0f · Evidence %.0f · Response %.0f · Timing %.0f · Degraded %s" % [
+		evaluation["score"], evaluation["weighted_score"], evaluation["penalty_points"],
+		"" if evaluation["comparable"] else " · not comparable",
+		c["detection"]["score"], c["classification"]["score"], c["evidence"]["score"], c["response"]["score"], c["response_time"]["score"],
+		degraded_text]
+	hud.show_overlay("Exercise ended" if session.status == ThreatSession.Status.COMPLETED else "Exercise aborted", detail)
+
+
+func acknowledge_selected() -> void:
+	_feedback(session.acknowledge(selected_track))
+
+
+func classify_selected(category: String, confidence: int) -> void:
+	_feedback(session.classify(selected_track, category, confidence))
+
+
+func respond_selected(response: String) -> void:
+	_feedback(session.respond(selected_track, response))
+
+
+func _on_decision_support_toggled(on: bool) -> void:
+	session.log_event("decision_support_visible", {"visible": on})
+
+
+func _feedback(result: Dictionary) -> void:
+	hud.show_feedback(result["message"], result["ok"])
+	hud.refresh(session, selected_track, view_text(), 1.0)
 
 
 func view_text() -> String:
@@ -157,6 +204,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		set_sensor_view(not sensor_view)
 	elif event.is_action_pressed("cycle_track"):
 		cycle_track()
+	elif event is InputEventKey and event.is_action_pressed("mark"):
+		acknowledge_selected()
 	else:
 		return
 	get_viewport().set_input_as_handled()
