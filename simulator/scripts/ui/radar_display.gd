@@ -23,6 +23,7 @@ const STYLES := {
 	"destination": {"shape": "cross_circle", "letter": "LZ", "color": Color(0.35, 1.0, 0.5), "name": "Landing zone"},
 	"waypoint": {"shape": "dot", "letter": "", "color": Color(1.0, 0.78, 0.25), "name": "Next ring"},
 	"threat_area": {"shape": "area", "letter": "", "color": Color(1.0, 0.35, 0.3), "name": "Briefed threat area"},
+	"zone": {"shape": "area", "letter": "", "color": Color(0.45, 0.95, 0.55), "name": "Protected area"},
 }
 const STALE_NAME := "Not seen recently (last known position)"
 
@@ -39,6 +40,10 @@ var own_position := Vector3.ZERO
 var own_yaw := 0.0 ## radians; 0 = facing north (-Z), positive = turned left
 var drawn: Array = [] ## {id, kind, point: Vector2, stale, clamped, label}
 var show_legend := false
+## When > 0, a faint wedge shows the current view's field of view (observation).
+var view_fov_deg := 0.0
+## Show every contact's label (only the selected one otherwise, to avoid clutter).
+var show_labels := false
 var status_text := ""
 
 var _legend: PanelContainer
@@ -76,7 +81,7 @@ func set_legend_visible(on: bool) -> void:
 
 static func _glyph(kind: String) -> String:
 	return {"friendly": "○ F", "unknown": "□ U", "hostile": "◆ H", "projectile": "▲ P", "track": "□ T", "group": "⬡ S",
-		"destination": "⊕ LZ", "waypoint": "● 1", "threat_area": "◌"}.get(kind, kind)
+		"destination": "⊕ LZ", "waypoint": "● 1", "threat_area": "◌", "zone": "◌"}.get(kind, kind)
 
 
 func _process(_delta: float) -> void:
@@ -98,7 +103,7 @@ func update_display() -> void:
 		var p := to_scope(mark["position"])
 		var clamped := p.length() > radius - 8.0
 		if clamped:
-			if mark["kind"] == "threat_area":
+			if STYLES.get(mark["kind"], {}).get("shape", "") == "area":
 				if p.length() - float(mark.get("radius", 0.0)) / range_m * radius > radius:
 					continue
 			else:
@@ -126,6 +131,10 @@ func _draw() -> void:
 	draw_arc(c, radius * 0.5, 0, TAU, 48, Color(0.4, 0.6, 0.55, 0.4), 1.0)
 	draw_line(c - Vector2(radius, 0), c + Vector2(radius, 0), Color(0.4, 0.6, 0.55, 0.25))
 	draw_line(c - Vector2(0, radius), c + Vector2(0, radius), Color(0.4, 0.6, 0.55, 0.25))
+	if view_fov_deg > 0.0:
+		var half := deg_to_rad(clampf(view_fov_deg, 1.0, 170.0) * 0.5)
+		for side in [-1.0, 1.0]:
+			draw_line(c, c + Vector2(0, -radius).rotated(side * half), Color(1, 1, 1, 0.35), 1.0)
 	# North marker on the rim.
 	var north := c + Vector2(0, -1).rotated(own_yaw) * (radius - 10.0)
 	draw_string(font, north + Vector2(-5, 5), "N", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.8, 0.9, 0.85))
@@ -152,9 +161,12 @@ func _draw_item(c: Vector2, item: Dictionary, font: Font) -> void:
 		"circle":
 			draw_arc(p, s, 0, TAU, 16, color, width)
 		"square":
-			draw_rect(Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0), color, not item["stale"] and item["kind"] == "track", width)
-			if item["kind"] != "track" or item["stale"]:
-				draw_rect(Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0), color, false, width)
+			# Fresh tracks are filled; unknown drones and stale contacts are outlines.
+			var box := Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0)
+			if item["kind"] == "track" and not item["stale"]:
+				draw_rect(box, color)
+			else:
+				draw_rect(box, color, false, width)
 		"diamond":
 			var points := PackedVector2Array([p + Vector2(0, -s - 1), p + Vector2(s + 1, 0), p + Vector2(0, s + 1), p + Vector2(-s - 1, 0)])
 			if item["stale"]:
@@ -190,7 +202,7 @@ func _draw_item(c: Vector2, item: Dictionary, font: Font) -> void:
 	var text := letter
 	if item["kind"] in ["waypoint", "destination"]:
 		text = label if not label.is_empty() else letter
-	elif selected and not label.is_empty():
+	elif (selected or show_labels) and not label.is_empty():
 		text = "%s %s" % [letter, label]
 	if item["stale"]:
 		text += "?"

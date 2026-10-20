@@ -4,6 +4,7 @@ extends "res://tests/test_case.gd"
 const AppState := preload("res://scripts/app/app_state.gd")
 const ScenarioConfig := preload("res://scripts/sim/scenario_config.gd")
 const ThreatSession := preload("res://scripts/sim/threat_session.gd")
+const SettingsStore := preload("res://scripts/app/settings_store.gd")
 
 
 func _wait_scene(path: String) -> Node:
@@ -39,12 +40,15 @@ func test_main_menu_lists_all_modes_and_opens_flight_training() -> void:
 
 func test_threat_observation_uses_default_scenario_when_none_selected() -> void:
 	AppState.selected_config = {}
+	# After the tutorial has been seen once, the menu goes straight to the briefing.
+	SettingsStore.set_value("tutorial_done", true)
 	var menu := add_scene("res://scenes/main.tscn")
 	await tree.process_frame
 	menu.buttons["briefing"].pressed.emit()
 	var briefing := await _wait_scene(AppState.SCENES["briefing"])
 	assert_eq(AppState.selected_config.get("id"), "single-rural-day", "default scenario selected")
 	assert_true(briefing != null and not briefing.start_button.disabled, "briefing can start")
+	SettingsStore.set_value("tutorial_done", false)
 
 
 func test_scenario_selection_presets_procedural_and_continue() -> void:

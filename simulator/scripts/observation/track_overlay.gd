@@ -4,7 +4,7 @@ extends Control
 ##  * coasting: amber dashed brackets with the time since the last update
 ##  * selected: yellow, thicker
 ##  * swarm group members: brackets only, plus one group label at the group centroid
-## Left-click near a marker selects that track.
+## Left-click near a marker selects that track; hovering shows a short tooltip.
 
 signal track_clicked(track_id: String)
 
@@ -18,6 +18,7 @@ var high_contrast := false
 var markers: Array = [] ## {id, point, track, world_position} from the last update
 ## Review/replay only: [{position: Vector3, text: String}] drawn as ground-truth labels.
 var truth_labels: Array = []
+var hover_id := ""
 var _screen_positions := {} ## track id -> Vector2
 
 
@@ -83,6 +84,14 @@ func _draw() -> void:
 			text += "  no update %.1f s" % (now - float(track["last_update_t"]))
 		draw_string_outline(font, point + Vector2(16, -10), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Color.BLACK)
 		draw_string(font, point + Vector2(16, -10), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
+	if not hover_id.is_empty() and hover_id != selected_id and _screen_positions.has(hover_id):
+		var at: Vector2 = _screen_positions[hover_id] + Vector2(16, 14)
+		var track: Dictionary = session.tracker.tracks.get(hover_id, {})
+		if not track.is_empty():
+			var range_m: float = (session.tracker.estimated_position(track, now) - camera.global_position).length()
+			var tip := "%s · %.0f m · click to select" % [hover_id, range_m]
+			draw_rect(Rect2(at - Vector2(4, 15), Vector2(font.get_string_size(tip, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 8, 20)), Color(0, 0, 0, 0.7))
+			draw_string(font, at, tip, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	for item in truth_labels:
 		var p: Vector3 = item["position"]
 		if camera.is_position_behind(p):
@@ -114,6 +123,9 @@ func _brackets(center: Vector2, half: float, color: Color, width: float, dashed:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		hover_id = nearest_track(event.position)
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var id := nearest_track(event.position)
 		if not id.is_empty():

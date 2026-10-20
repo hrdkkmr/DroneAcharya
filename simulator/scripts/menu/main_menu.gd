@@ -116,6 +116,9 @@ func _register(key: String, button: Button) -> Button:
 
 
 func _open(scene: String) -> void:
+	# First time in threat detection: the tutorial comes first, then the briefing.
+	if scene == "briefing" and not SettingsStore.get_value("tutorial_done"):
+		scene = "tutorial"
 	if scene == "briefing" and AppState.selected_config.is_empty():
 		var ScenarioConfig := load("res://scripts/sim/scenario_config.gd")
 		var result: Dictionary = ScenarioConfig.load_file(DEFAULT_SCENARIO)

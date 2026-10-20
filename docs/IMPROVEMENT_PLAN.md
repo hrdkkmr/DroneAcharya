@@ -184,3 +184,25 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
   - **Flight record:** threat summary added.
   - **Balance probe (autopilot, no evasion, not committed as a test):** all 6 hostile mission/profile combinations complete; Heavy takes 2 hits in the village. The hostile drone speed was lowered from 5.0 to 4.5 m/s after Heavy failed at 5.0.
   - **Tests:** new `test_flight_radar_and_threats.gd` (9 tests). Suite **143/143**.
+- **2026-10-20 — Phase 3 complete:**
+  - **Tutorial:** 9 steps with drawn diagrams and two practice interactions.
+    - Offered on the first Threat Detection visit; skip asks for confirmation; replayable from the menu, the briefing and the pause screen.
+    - Completion is remembered.
+    - No voice narration (text only); this is documented.
+  - **Observation HUD rebuilt:**
+    - status card (time left, objective, SENSOR DEGRADED / NEW alerts, collapsible sensor status);
+    - decision card bound to the selected contact;
+    - contacts list with swarm groups nested under one row;
+    - collapsible contact details;
+    - decision-support toggle (still logged);
+    - radar of tracker tracks and groups with a view wedge and the protected area.
+  - **Mouse workflow:**
+    - wheel = option, right-click = confirm, right-drag = look;
+    - Shift+wheel or `=`/`-` = zoom (the plain wheel zooms only when nothing is selected);
+    - alarm responses need one more explicit Confirm;
+    - a 350 ms double-confirm guard;
+    - confirming a classification acknowledges the contact in the same step (`ThreatSession.classify(..., auto_acknowledge)`).
+  - **Keyboard fallback:** ↑/↓, Enter, Backspace, 1/2/3. New input actions are covered by `test_input_map.gd`.
+  - **Group scope:** `ThreatSession.decision_scope()` tells the card whether a decision covers one contact or the whole group.
+  - **Test change:** `test_threat_observation_uses_default_scenario_when_none_selected` now marks the tutorial as already seen, because a first visit now opens the tutorial.
+  - **Tests:** new `test_decision_workflow_and_tutorial.gd` (10 tests). Suite **153/153**.

@@ -6,6 +6,8 @@ const EXPECTED_KEYS := {
 	"ascend": KEY_SPACE, "descend": KEY_C, "yaw_left": KEY_Q, "yaw_right": KEY_E,
 	"toggle_view": KEY_V, "reset_mission": KEY_R, "pause": KEY_ESCAPE,
 	"mark": KEY_F, "classify": KEY_K, "report": KEY_ENTER, "cycle_track": KEY_TAB, "jump": KEY_J,
+	"option_prev": KEY_UP, "option_next": KEY_DOWN, "decision_back": KEY_BACKSPACE,
+	"confidence_low": KEY_1, "confidence_medium": KEY_2, "confidence_high": KEY_3, "zoom_in": KEY_EQUAL, "zoom_out": KEY_MINUS,
 }
 
 

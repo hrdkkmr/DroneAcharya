@@ -158,7 +158,9 @@ func acknowledge(track_id: String) -> Dictionary:
 	return _accept("acknowledge", track_id, {"members": members}, "%s acknowledged." % track_id)
 
 
-func classify(track_id: String, category: String, confidence: int) -> Dictionary:
+## With `auto_acknowledge`, an unacknowledged track is acknowledged first (logged as
+## its own acknowledge action), so the mouse workflow needs one confirmation, not two.
+func classify(track_id: String, category: String, confidence: int, auto_acknowledge := false) -> Dictionary:
 	var args := {"category": category, "confidence": confidence}
 	var check := _check_track(track_id, "classify", args)
 	if not check["ok"]:
@@ -168,6 +170,8 @@ func classify(track_id: String, category: String, confidence: int) -> Dictionary
 	if confidence < 0 or confidence > 100:
 		return _reject("classify", track_id, "Confidence must be 0-100.", false, args)
 	var state := _state(track_id)
+	if state["acknowledged_t"] < 0.0 and auto_acknowledge:
+		acknowledge(track_id)
 	if state["acknowledged_t"] < 0.0:
 		return _reject("classify", track_id, "Acknowledge %s first (F)." % track_id, false, args)
 	if not String(state["response"]).is_empty():
@@ -215,6 +219,15 @@ func respond(track_id: String, response: String) -> Dictionary:
 
 func trainee_state(track_id: String) -> Dictionary:
 	return trainee.get(track_id, {})
+
+
+## Track ids a classification of `category` (or a response after it) would apply to:
+## the whole observed swarm group when the category is "swarm" and grouping is on,
+## otherwise just the track. Used to tell the trainee the scope before confirming.
+func decision_scope(track_id: String, category: String) -> Array:
+	if not tracker.tracks.has(track_id):
+		return [track_id]
+	return _targets(track_id) if category == "swarm" else [track_id]
 
 
 func _check_track(track_id: String, kind: String, args := {}) -> Dictionary:

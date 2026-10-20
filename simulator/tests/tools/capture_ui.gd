@@ -27,7 +27,7 @@ func _initialize() -> void:
 	AppState.sessions_dir = "user://test_runs/capture_sessions"
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	await process_frame
-	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village", "hostile"]:
+	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village", "hostile", "tutorial", "threat_briefing", "observation_alarm"]:
 		if only.is_empty() or shot in only:
 			await call(shot)
 	quit(0)
@@ -133,6 +133,43 @@ func hostile() -> void:
 			break
 	await _save("hostile_incoming")
 	AppState.flight_mission = "basic_course"
+
+
+func tutorial() -> void:
+	var scene := await _goto("tutorial")
+	await _save("tutorial_step1")
+	for i in 3:
+		scene.panel.next()
+	scene.panel.practice_radar.contact_clicked.emit("T2")
+	await _save("tutorial_practice")
+
+
+func threat_briefing() -> void:
+	AppState.selected_config = ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"]
+	await _goto("briefing")
+	await _save("threat_briefing")
+
+
+## Swarm scenario: classify a contact, then highlight an alarm to show the confirmation.
+func observation_alarm() -> void:
+	AppState.selected_config = ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"]
+	var scene := await _goto("observation")
+	while scene.session.time_s() < 75.0:
+		scene.session.step()
+	var groups: Dictionary = scene.session.tracker.groups
+	if not groups.is_empty():
+		scene.select_track("group:" + groups.keys()[0])
+	else:
+		scene.cycle_track()
+	scene.centre_on_selected()
+	scene.hud.highlight["classify"] = 4
+	scene.hud.confirm()
+	scene.hud._busy_until_ms = 0
+	scene.hud.highlight["respond"] = 4
+	scene.hud.confirm()
+	for i in 20:
+		await process_frame
+	await _save("observation_alarm")
 
 
 func _goto(scene: String) -> Node:

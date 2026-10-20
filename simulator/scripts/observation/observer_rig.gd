@@ -1,6 +1,6 @@
 extends Node3D
-## Observation-post camera. Look with right-mouse drag or W/A/S/D; zoom with the
-## mouse wheel. Sensitivity scales with zoom so aiming stays precise when zoomed in.
+## Observation-post camera. Look with right-mouse drag or W/A/S/D; zoom with Shift +
+## wheel, = and -, or the plain wheel when no contact is selected. Sensitivity scales with zoom so aiming stays precise when zoomed in.
 ## Eye view zooms 70°→20°; the simulated sensor camera zooms 30°→2°.
 
 const MAX_FOV := 70.0
@@ -16,6 +16,9 @@ var yaw_degrees := 0.0
 var pitch_degrees := 5.0
 var fov := MAX_FOV
 var sensor_mode := false
+## True while a contact is selected: the plain mouse wheel then changes the decision
+## option instead of zooming.
+var wheel_reserved := false
 
 @onready var eye_camera: Camera3D = $EyeCamera
 
@@ -31,11 +34,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		yaw_degrees -= event.relative.x * scale
 		pitch_degrees -= event.relative.y * scale
 		_apply()
-	elif event is InputEventMouseButton and event.pressed:
+	elif event is InputEventMouseButton and event.pressed and (event.shift_pressed or not wheel_reserved):
+		# The plain wheel belongs to the decision card while a contact is selected
+		# (observation_main sets wheel_reserved); Shift + wheel always zooms.
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			set_fov(fov / 1.2)
+			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			set_fov(fov * 1.2)
+			get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("zoom_in"):
+		set_fov(fov / 1.2)
+	elif event.is_action_pressed("zoom_out"):
+		set_fov(fov * 1.2)
 
 
 func _process(delta: float) -> void:

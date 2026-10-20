@@ -20,6 +20,9 @@ const Replay := preload("res://scripts/training/replay.gd")
 const Rubric := preload("res://scripts/training/rubric.gd")
 const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
+const TutorialPanel := preload("res://scripts/menu/tutorial_panel.gd")
+const SettingsStore := preload("res://scripts/app/settings_store.gd")
+const CLICK_MAX_DRAG_PX := 6.0 ## a right-button press that moves less than this is a click (confirm), not a look-drag
 const DEFAULT_SCENARIO := "res://scenarios/01_single_rural_day.json"
 
 var session: ThreatSession
@@ -43,6 +46,9 @@ var _replay_position := 0.0 ## fractional replay tick
 var _previous := {} ## actor id -> position at the previous tick (smooth rendering only)
 var _visuals := {}
 var _end_shown := false
+var _right_press := Vector2.ZERO
+var _right_drag := 0.0
+var _tutorial: TutorialPanel
 
 @onready var world_root: Node3D = $World
 @onready var actors_root: Node3D = $Actors
@@ -65,6 +71,8 @@ func _ready() -> void:
 	hud.resume_requested.connect(toggle_pause)
 	hud.restart_requested.connect(restart)
 	hud.exit_requested.connect(exit_to_menu)
+	hud.tutorial_requested.connect(open_tutorial)
+	hud.deselect_requested.connect(select_track.bind(""))
 	hud.review_requested.connect(open_review)
 	hud.acknowledge_requested.connect(acknowledge_selected)
 	hud.classify_requested.connect(classify_selected)
@@ -124,6 +132,8 @@ func _build_world() -> void:
 	overlay.session = session
 	selected_track = ""
 	overlay.selected_id = ""
+	observer.wheel_reserved = false
+	hud.bind_card(session, "")
 	_accumulator = 0.0
 	_end_shown = false
 	hud.hide_overlay()
@@ -213,6 +223,7 @@ func _process(delta: float) -> void:
 	if session == null:
 		return
 	hud.refresh(session, selected_track, view_text(), delta)
+	hud.update_radar(session, observer.global_position, observer.yaw_degrees, observer.fov, selected_track)
 	if replay != null:
 		if replay.is_done() and not _end_shown:
 			_end_shown = true
@@ -254,14 +265,20 @@ func acknowledge_selected() -> void:
 		_feedback(session.acknowledge(selected_track))
 
 
+## Classification from the decision card. An unacknowledged contact is marked seen
+## in the same step (one confirmation instead of two).
 func classify_selected(category: String, confidence: int) -> void:
 	if replay == null:
-		_feedback(session.classify(selected_track, category, confidence))
+		var result := session.classify(selected_track, category, confidence, true)
+		_feedback(result)
+		hud.on_result("classify", result["ok"])
 
 
 func respond_selected(response: String) -> void:
 	if replay == null:
-		_feedback(session.respond(selected_track, response))
+		var result := session.respond(selected_track, response)
+		_feedback(result)
+		hud.on_result("respond", result["ok"])
 
 
 func _on_decision_support_toggled(on: bool) -> void:
@@ -291,10 +308,16 @@ func set_sensor_view(enabled: bool) -> void:
 		_visuals[id].set_thermal(thermal)
 
 
+## Selects a contact (or a swarm group's first member) and binds the decision card to it.
 func select_track(track_id: String) -> void:
+	if track_id.begins_with("group:"):
+		var group: Dictionary = session.tracker.groups.get(track_id.trim_prefix("group:"), {})
+		track_id = group["members"][0] if not group.is_empty() else ""
 	selected_track = track_id
 	overlay.selected_id = track_id
+	observer.wheel_reserved = not track_id.is_empty() and replay == null
 	hud.select_row(track_id)
+	hud.bind_card(session, track_id)
 	hud.refresh(session, selected_track, view_text(), 1.0)
 
 
@@ -316,6 +339,9 @@ func centre_on_selected() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _decision_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("pause"):
 		toggle_pause()
 	elif event.is_action_pressed("reset_mission"):
@@ -326,16 +352,73 @@ func _unhandled_input(event: InputEvent) -> void:
 		cycle_track()
 	elif event is InputEventKey and event.is_action_pressed("mark"):
 		acknowledge_selected()
-	elif event.is_action_pressed("classify"):
-		hud.submit_classification()
-	elif event.is_action_pressed("report"):
-		hud.submit_response()
+	elif event.is_action_pressed("classify") or event.is_action_pressed("report"):
+		hud.confirm()
 	else:
 		return
 	get_viewport().set_input_as_handled()
 
 
+## Mouse-first decision input. Returns true when the event was used.
+##  * wheel (no Shift) with a contact selected: change the highlighted option;
+##  * right-button click without dragging: confirm the highlighted option
+##    (a right-button drag still looks around; observer_rig handles that);
+##  * ↑/↓, Backspace, 1/2/3: keyboard equivalents.
+func _decision_input(event: InputEvent) -> bool:
+	if replay != null or session == null or get_tree().paused:
+		return false
+	if event is InputEventMouseButton:
+		if event.pressed and not event.shift_pressed and not selected_track.is_empty() 				and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+			return hud.cycle_option(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			if event.pressed:
+				_right_press = event.position
+				_right_drag = 0.0
+				return false
+			if _right_drag < CLICK_MAX_DRAG_PX:
+				hud.confirm()
+				return true
+		return false
+	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		_right_drag = maxf(_right_drag, event.position.distance_to(_right_press))
+		return false
+	if event.is_action_pressed("option_prev"):
+		return hud.cycle_option(-1)
+	if event.is_action_pressed("option_next"):
+		return hud.cycle_option(1)
+	if event.is_action_pressed("decision_back"):
+		hud.back()
+		return true
+	for level in [["confidence_low", 30], ["confidence_medium", 60], ["confidence_high", 90]]:
+		if event.is_action_pressed(level[0]):
+			hud.set_confidence(level[1])
+			return true
+	return false
+
+
+## Shows the tutorial over the paused exercise; closing it returns to the pause menu.
+func open_tutorial() -> void:
+	if _tutorial != null:
+		return
+	_tutorial = TutorialPanel.new()
+	_tutorial.embedded = true
+	$HUD.add_child(_tutorial)
+	_tutorial.finished.connect(_close_tutorial)
+
+
+func _close_tutorial(_skipped := false) -> void:
+	if _tutorial == null:
+		return
+	SettingsStore.set_value("tutorial_done", true)
+	SettingsStore.save()
+	_tutorial.queue_free()
+	_tutorial = null
+
+
 func toggle_pause() -> void:
+	if _tutorial != null:
+		_close_tutorial()
+		return
 	if replay != null:
 		replay_playing = not replay_playing
 		return
