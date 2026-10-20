@@ -31,6 +31,7 @@ func _ready() -> void:
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	SettingsStore.apply()
+	UiKit.install_symbol_font()
 	UiKit.background(self)
 	AudioCues.attach(self)
 	var title: Label = $Title
@@ -82,6 +83,8 @@ func _ready() -> void:
 	var quit := UiKit.button("Exit", get_tree().quit, 160)
 	quit.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	buttons["quit"] = quit
+	# Quitting inside a browser tab would only freeze the page; the tab is closed instead.
+	quit.visible = not OS.has_feature("web")
 	column.add_child(quit)
 	buttons["flight"] = buttons["flight_briefing"]
 	buttons["flight"].grab_focus.call_deferred()
