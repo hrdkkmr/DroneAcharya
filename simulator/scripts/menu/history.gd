@@ -57,9 +57,17 @@ func _ready() -> void:
 	invalid_label = UiKit.label("", 14, UiKit.WARN, true)
 	left.add_child(invalid_label)
 	var file_buttons := UiKit.hbox(8)
-	file_buttons.add_child(UiKit.button("Import…", _open_import, 120))
+	var import_button := UiKit.button("Import…", _open_import, 120)
+	file_buttons.add_child(import_button)
 	file_buttons.add_child(UiKit.button("Export all", export_all, 130))
-	file_buttons.add_child(UiKit.button("Open folder", func(): OS.shell_open(ProjectSettings.globalize_path(sessions_dir)), 150))
+	var folder_button := UiKit.button("Open folder", func(): OS.shell_open(ProjectSettings.globalize_path(sessions_dir)), 150)
+	file_buttons.add_child(folder_button)
+	if OS.has_feature("web"):
+		# The browser keeps saved files in its own storage: there is no folder to open,
+		# and exports are offered as downloads instead (see _deliver).
+		for button in [import_button, folder_button]:
+			button.disabled = true
+			button.tooltip_text = "Available in the Windows version only."
 	left.add_child(file_buttons)
 	left.add_child(UiKit.heading("Next recommended exercise (rule-based)"))
 	recommendation_label = UiKit.rich(14)
@@ -205,6 +213,7 @@ func export_selected() -> Dictionary:
 		file.store_string(JSON.stringify(selected, "  "))
 		file.close()
 		status_label.text = "Exported the flight record to %s" % ProjectSettings.globalize_path(path)
+		_deliver(path)
 		return {"ok": true, "path": path, "count": 1}
 	return _export([selected], "droneacharya-session-%s.json" % selected["session_id"])
 
@@ -216,7 +225,18 @@ func export_all() -> Dictionary:
 func _export(records: Array, file_name: String) -> Dictionary:
 	var result := SessionIO.export_bundle(records, AppState.exports_dir.path_join(file_name))
 	status_label.text = "Exported %d session(s) to %s" % [result["count"], ProjectSettings.globalize_path(result["path"])] if result["ok"] else "Export failed: " + result["error"]
+	if result["ok"]:
+		_deliver(result["path"])
 	return result
+
+
+## In the browser the exported file sits in the browser's private storage, so it is
+## also handed to the browser as a download. Does nothing on desktop.
+func _deliver(path: String) -> void:
+	if not OS.has_feature("web"):
+		return
+	JavaScriptBridge.download_buffer(FileAccess.get_file_as_bytes(path), path.get_file(), "application/json")
+	status_label.text = "Downloaded %s (see your browser's downloads)." % path.get_file()
 
 
 func _open_import() -> void:

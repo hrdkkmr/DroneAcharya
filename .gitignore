@@ -11,3 +11,6 @@ ml/data/
 ml/artifacts/
 **/__pycache__/
 *.pyc
+
+# Deployment exports (web and Windows builds; generated, never committed)
+build/

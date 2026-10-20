@@ -20,7 +20,29 @@ const INFO := Color(0.45, 0.75, 1.0)
 
 const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 
+## Symbols used in the UI (■ □ ◆ ▲ ⬡ ▶ ✓ arrows…), subset from DejaVu Sans
+## (licence: res://fonts/LICENSE_DEJAVU.txt). Not a font extension, so no import step.
+const SYMBOL_FONT := "res://fonts/dejavu_sans_symbols.ttf.bin"
+
 static var _theme: Theme
+static var _symbols_installed := false
+
+
+## The web build has no system fonts to fall back on, so symbols missing from the
+## default font would show as boxes. Adds the bundled symbol font as a fallback of the
+## default font there; desktop keeps the operating system's fallback. Call once at startup.
+static func install_symbol_font() -> void:
+	if _symbols_installed or not OS.has_feature("web"):
+		return
+	_symbols_installed = true
+	var data := FileAccess.get_file_as_bytes(SYMBOL_FONT)
+	var base := ThemeDB.fallback_font
+	if data.is_empty() or base == null:
+		push_warning("Symbol font not available; some symbols may show as boxes.")
+		return
+	var symbols := FontFile.new()
+	symbols.data = data
+	base.fallbacks = base.fallbacks + [symbols]
 
 
 ## One Theme instance shared by every screen (assign to the root Control).
