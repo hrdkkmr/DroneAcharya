@@ -285,6 +285,7 @@ func set_sensor_view(enabled: bool) -> void:
 	observer.set_sensor_mode(enabled)
 	var thermal: bool = enabled and config["time_of_day"] == "night"
 	hud.set_sensor_view(enabled, thermal)
+	overlay.high_contrast = enabled
 	for id in _visuals:
 		_visuals[id].set_thermal(thermal)
 
@@ -324,6 +325,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		cycle_track()
 	elif event is InputEventKey and event.is_action_pressed("mark"):
 		acknowledge_selected()
+	elif event.is_action_pressed("classify"):
+		hud.submit_classification()
+	elif event.is_action_pressed("report"):
+		hud.submit_response()
 	else:
 		return
 	get_viewport().set_input_as_handled()

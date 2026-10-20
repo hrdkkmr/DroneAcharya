@@ -118,6 +118,10 @@ Target actors **do not collide** with buildings or trees. The generator keeps th
 
 **This is a game approximation, not a validated aerodynamic model.**
 
+### Player training drone (flight mode)
+
+This is unchanged from Stage 1 (`DRONEACHARYA_STAGE1.md`), except for one addition in Phase 6: the chase camera casts a ray from the drone to its desired position and stops 0.4 m in front of any obstacle, so it no longer passes through pillars or walls (`camera_rig.gd`; tested in `test_flight_training.gd`).
+
 ### Shared vehicle-state interface
 
 `vehicle_state.gd` holds position, velocity, acceleration, yaw, time, `horizontal_speed()`, `heading_degrees()` and `to_dict()`. Target actors use it directly. The player's training drone keeps its own Stage 1 assisted-flight controller (`drone_controller.gd`, 60 Hz Godot physics, collisions with course obstacles). Its telemetry uses the same units and axis conventions.

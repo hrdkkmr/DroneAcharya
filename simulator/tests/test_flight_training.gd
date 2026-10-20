@@ -235,3 +235,19 @@ func test_autopilot_completes_the_mission_using_real_controls() -> void:
 			"autopilot finished: status %d, next checkpoint %d, reason '%s', position %s" % [
 				mission.state.status, mission.state.next_checkpoint, mission.state.failure_reason, drone.global_position])
 	print("     autopilot mission time: %.1f s" % mission.state.elapsed_seconds)
+
+
+func test_chase_camera_stays_in_front_of_walls() -> void:
+	var main := await _start()
+	var drone: CharacterBody3D = main.drone
+	var camera: Camera3D = main.camera_rig.follow_camera
+	await _hold("ascend", 30)
+	# North of WallLeft (z -90.75..-89.25), facing north: the ideal chase position is behind the wall.
+	_teleport(drone, Vector3(-17, 5, -94))
+	await wait_physics_frames(90)
+	var focus := drone.global_position + Vector3.UP * 0.5
+	var query := PhysicsRayQueryParameters3D.create(focus, camera.global_position)
+	query.exclude = [drone.get_rid()]
+	var hit := drone.get_world_3d().direct_space_state.intersect_ray(query)
+	assert_true(hit.is_empty(), "nothing between the drone and the camera")
+	assert_true(camera.global_position.z < -90.75, "camera stays on the drone's side of the wall (z %.2f)" % camera.global_position.z)

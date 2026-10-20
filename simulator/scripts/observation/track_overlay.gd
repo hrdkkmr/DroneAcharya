@@ -13,6 +13,8 @@ const PICK_RADIUS_PX := 32.0
 var session: RefCounted
 var camera: Camera3D
 var selected_id := ""
+## Sensor views are monochrome: use brighter marker colours there.
+var high_contrast := false
 var markers: Array = [] ## {id, point, track, world_position} from the last update
 ## Review/replay only: [{position: Vector3, text: String}] drawn as ground-truth labels.
 var truth_labels: Array = []
@@ -65,6 +67,8 @@ func _draw() -> void:
 			continue
 		var selected: bool = id == selected_id
 		var color := Color(0.35, 1.0, 0.45) if status == "confirmed" else Color(1.0, 0.65, 0.2)
+		if high_contrast and status == "confirmed":
+			color = Color(1.0, 1.0, 1.0)
 		if selected:
 			color = Color(1.0, 0.9, 0.2)
 		_brackets(point, 14.0 if selected else 11.0, color, 2.5 if selected else 1.5, status == "coasting")

@@ -122,12 +122,15 @@ func test_exit_to_menu_aborts_the_session() -> void:
 	assert_eq(session.status, ThreatSession.Status.ABORTED, "session aborted on exit")
 
 
+## Opens the observation scene and advances its session to `seconds` by stepping the
+## simulation directly (no real-time wait; rendering is not needed for these checks).
 func _start_observation(path: String, seconds: float) -> Node:
 	_select(path)
 	AppState.goto(tree, "observation")
 	var scene: Node = await _wait_scene(AppState.SCENES["observation"])
 	while scene.session.time_s() < seconds:
-		await tree.physics_frame
+		scene.session.step()
+	await tree.process_frame
 	return scene
 
 
@@ -280,3 +283,20 @@ func test_exercise_to_review_to_3d_replay_and_back() -> void:
 	assert_eq(replay_scene.session.spam_count, before, "trainee actions ignored during replay")
 	replay_scene.exit_to_menu()
 	await _wait_scene(AppState.SCENES["history"])
+
+
+func test_history_recommends_and_starts_the_next_exercise() -> void:
+	var dir: String = AppState.sessions_dir
+	DirAccess.make_dir_recursive_absolute(dir)
+	for name in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(dir.path_join(name))
+	AppState.review_session = {}
+	AppState.goto(tree, "history")
+	var history := await _wait_scene(AppState.SCENES["history"])
+	assert_eq(history.recommendation["rule"], "foundation", "empty history recommends a foundation exercise")
+	assert_true("rule-based" in history.recommendation["method"] and "foundation" in history.recommendation_label.text, "recommendation explained")
+	var expected: Dictionary = history.recommendation["config"]
+	history.start_recommended()
+	var briefing := await _wait_scene(AppState.SCENES["briefing"])
+	assert_eq(AppState.selected_config, expected, "briefing uses the recommended config")
+	assert_true(not briefing.start_button.disabled, "recommended exercise can start")

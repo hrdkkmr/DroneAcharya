@@ -411,3 +411,36 @@ It is done when:
 - VIGIL is unchanged.
 
 This unblocks every later stage without touching gameplay.
+
+---
+
+## 9. Implementation status and deviations (updated at Phase 6)
+
+The plan above was implemented under the later brief "Complete Simulation, AI Decision Models, and Training System" (SIH PS 26247 context). That brief's Phases 0–6 replaced the stage list in §5:
+
+| Brief phase | Commit | Delivered |
+|---|---|---|
+| 0 Preserve and baseline | (no commit needed) | Stage 1 already committed as `91fdd32`; baseline 32 tests, 23.9 s autopilot |
+| 1 Scenario foundation | `72cead7` | Menu, flight scene moved, scenario format and procedural generator, threat world, observation scene |
+| 2 Sensors and tracking | `7daf38e` | Radar-like and camera sensors, tracker, swarm groups, sensor view, track UI |
+| 3 Rule-based decisions | `a1e91fe` | features-1, Model 1, Model 3, trainee workflow, `da-rubric-1` |
+| 4 Real ML model | `d81de8e` | Dataset generator, trained random forest, held-out evaluation, GDScript inference, fallback, settings |
+| 5 Replay and review | `47711a3` | Session schema and validator, history, export/import, deterministic replay, AAR |
+| 6 Adaptive and polish | (Phase 6 commit) | `adapt-da-1`, chase-camera collision, key conflicts resolved, marker contrast, faster tests, performance, export preset, docs |
+
+### Answers to §6 questions
+
+- **Q1 (AI):** a genuinely trained ML classifier now exists (Model 2), alongside clearly labelled rule-based Models 1 and 3 and rule-based adaptation. Metrics come from held-out synthetic data and are not real-world evidence.
+- **Q2 (rubric adaptations):** implemented as proposed. Evidence is the time an object is genuinely available at identification quality (truth geometry), not screen time. There are five responses. Spam penalty P4 and a degraded-conditions component were added.
+- **Q3 (swarms):** individual tracks are kept; the swarm is assessed as one group entity (configurable through `group_swarms`).
+- **Q4 (VIGIL):** VIGIL is unchanged and no VIGIL module was added. A field mapping is documented (`DRONEACHARYA_SESSION_SCHEMA.md` §5); there is no importer.
+- **Q5 (mode menu):** implemented. `main.tscn` is the menu with the original `Title`; the flight course moved to `scenes/flight/flight_training.tscn`.
+- **Q6 (environments):** urban (building grid) and rural (trees and farmhouses) on flat ground, with day/night and clear/haze/fog. There is no heightmap terrain, so mountain and desert looks are future work.
+- **Q7 (problem statement):** the brief names SIH PS 26247 (Ministry of Defence / DSSC). Conformance to the official text has not been independently verified.
+
+### Other deviations from §§3–5
+
+- **Two sensors:** the observer and sensor mode use synthetic radar-like and camera sensors feeding a tracker, rather than marking objects by aiming. The trainee acknowledges tracks; markers show tracker estimates.
+- **Replay:** deterministic re-simulation, verified identical (no 10 Hz transform recording).
+- **Key bindings:** `report` moved from R to Enter, `classify` from C to K, `jump` from Space to J. No key now drives two actions.
+- **Rule baseline:** revised once (`rules-da-1` → `rules-da-2`) from training-split statistics. This is documented with both results.

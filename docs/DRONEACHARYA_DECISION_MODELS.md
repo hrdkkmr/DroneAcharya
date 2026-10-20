@@ -161,3 +161,31 @@ acknowledge (F) → classify (category + confidence 0–100) → respond (one fi
 - Classifying or responding to a track in an observed swarm group applies to the whole group when `group_swarms` is on.
 - Order errors (for example, classifying before acknowledging) are rejected with a message but are **not** spam.
 - Every action, accepted or rejected, is logged with its tick.
+
+## 6. Adaptive difficulty — `adapt-da-1` (`scripts/training/adaptive.gd`)
+
+This is **rule-based, not machine learning.** It is modelled on VIGIL's `rules-1`, is deterministic (the same history always gives the same recommendation) and runs on the history screen. "Start recommended exercise" opens the briefing for the recommended config.
+
+**Which sessions count:** only **completed, comparable** sessions; aborted and no-evidence sessions are excluded, and the number excluded is reported. The window is the last 5 such sessions; "recent" means the last 3. The baseline level is that of the latest counted session.
+
+| Rule | Condition | Result |
+|---|---|---|
+| foundation | no counted session | level 1, single threat, day, clear |
+| sparse | fewer than 3 counted sessions | hold the level |
+| inconsistent | recent scores differ by more than 20 points | hold the level |
+| increase / ceiling | all recent scores ≥ 80 and no missed-threat (P3) or false-alarm (P2) findings | +1 level (never above 5) |
+| decrease / floor | all recent scores < 55 | −1 level (never below 1) |
+| consolidate | otherwise | hold the level |
+
+**Focus.** The component with the lowest mean over the window steers the next exercise's conditions:
+
+| Weakest component | Next exercise |
+|---|---|
+| classification or evidence | day, clear visibility |
+| detection or response time | no swarm |
+| degraded conditions | fog |
+| response | same conditions |
+
+**Seed and config.** The next seed is the latest seed + 7919, skipping any seed already used in saved history. The config comes from the procedural generator for that seed, options and level, so the difficulty level in turn sets target count, sensor detection probability, noise, delay, clutter and degradation (`DRONEACHARYA_SIMULATION_MODELS.md` §2).
+
+**Output:** `{policy, method: "rule-based", rule, baseline_difficulty, difficulty, difficulty_change, focus, reasons[], evidence_session_ids, excluded_sessions, config}`. Every reason is shown on screen.

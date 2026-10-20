@@ -10,6 +10,7 @@ const SessionIO := preload("res://scripts/training/session_io.gd")
 const Replay := preload("res://scripts/training/replay.gd")
 const Aar := preload("res://scripts/training/aar.gd")
 const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
+const Adaptive := preload("res://scripts/training/adaptive.gd")
 
 var sessions: Array = []
 var invalid: Array = []
@@ -19,6 +20,8 @@ var report_label: RichTextLabel
 var status_label: Label
 var invalid_label: Label
 var import_dialog: FileDialog
+var recommendation: Dictionary = {}
+var recommendation_label: RichTextLabel
 var sessions_dir := AppState.sessions_dir
 
 
@@ -48,6 +51,13 @@ func _ready() -> void:
 	file_buttons.add_child(UiKit.button("Export all", export_all, 130))
 	file_buttons.add_child(UiKit.button("Open folder", func(): OS.shell_open(ProjectSettings.globalize_path(sessions_dir)), 150))
 	left.add_child(file_buttons)
+	left.add_child(UiKit.heading("Next recommended exercise (rule-based)"))
+	recommendation_label = RichTextLabel.new()
+	recommendation_label.bbcode_enabled = true
+	recommendation_label.fit_content = true
+	recommendation_label.add_theme_font_size_override("normal_font_size", 14)
+	left.add_child(recommendation_label)
+	left.add_child(UiKit.button("Start recommended exercise", start_recommended))
 
 	var right := UiKit.vbox(8)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -86,6 +96,9 @@ func reload() -> void:
 		var index := list.add_item("%s · %.1f · %s" % [String(record["created_at"]).substr(0, 16).replace("T", " "), record["evaluation"]["score"], record["scenario"]["title"]])
 		list.set_item_tooltip(index, "%s · %s · seed %d · %s" % [record["session_id"], record["status"], record["scenario"]["seed"], record["scenario"]["title"]])
 	invalid_label.text = "" if invalid.is_empty() else "%d invalid file(s) not loaded (left untouched): %s" % [invalid.size(), "; ".join(PackedStringArray(invalid.map(func(i): return "%s — %s" % [i["file"], i["reason"]])))]
+	recommendation = Adaptive.recommend(sessions)
+	recommendation_label.text = "[b]%s[/b] · level %d → %d (%s)\n%s" % [recommendation["config"]["title"], recommendation["baseline_difficulty"],
+		recommendation["difficulty"], recommendation["rule"], "\n".join(recommendation["reasons"])]
 	var wanted: String = AppState.review_session.get("session_id", "")
 	var index := 0
 	for i in sessions.size():
@@ -104,6 +117,12 @@ func _on_selected(index: int) -> void:
 	AppState.review_session = selected
 	report_label.text = Aar.report(selected)
 	status_label.text = ""
+
+
+func start_recommended() -> void:
+	AppState.selected_config = recommendation["config"]
+	AppState.replay_requested = false
+	AppState.goto(get_tree(), "briefing")
 
 
 func verify_replay() -> Dictionary:

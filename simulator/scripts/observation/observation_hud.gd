@@ -119,7 +119,7 @@ func _ready() -> void:
 	right_column.add_child(UiKit.button("Centre view on selected track", func(): centre_requested.emit()))
 	_build_decision_panel()
 
-	var help := UiKit.label("Right-drag / W A S D: look · Wheel: zoom · V: eye/sensor · Tab: next track · Click marker: select · Esc: pause · R: restart", 14, UiKit.MUTED)
+	var help := UiKit.label("Right-drag / W A S D: look · Wheel: zoom · V: eye/sensor · Tab / click: select track · F acknowledge · K classify · Enter respond · Esc pause · R restart", 14, UiKit.MUTED)
 	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 16)
 	add_child(help)
 	_build_overlay()
@@ -136,6 +136,7 @@ func _build_decision_panel() -> void:
 	trainee_label = UiKit.label("", 15, Color.WHITE, true)
 	rows.add_child(trainee_label)
 	rows.add_child(UiKit.button("Acknowledge track (F)", func(): acknowledge_requested.emit()))
+	rows.add_child(UiKit.label("Classify: K · Submit response: Enter", 13, UiKit.MUTED))
 	var classify_row := UiKit.hbox(6)
 	category_option = OptionButton.new()
 	for category in Vocabulary.CATEGORIES:
@@ -182,6 +183,15 @@ func _build_decision_panel() -> void:
 func _on_support_toggled(on: bool) -> void:
 	support_label.visible = on
 	decision_support_toggled.emit(on)
+
+
+## Keyboard shortcuts (K / Enter) submit what the panel currently shows.
+func submit_classification() -> void:
+	classify_requested.emit(Vocabulary.CATEGORIES[category_option.selected], int(confidence_slider.value))
+
+
+func submit_response() -> void:
+	respond_requested.emit(Vocabulary.RESPONSES[response_option.selected])
 
 
 func show_feedback(text: String, ok: bool) -> void:

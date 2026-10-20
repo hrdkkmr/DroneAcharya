@@ -2,7 +2,8 @@ extends SceneTree
 ## Headless test runner. Usage (from the workspace root):
 ##   Godot_v4.7.2-stable_win64_console.exe --headless --path simulator --script res://tests/run_tests.gd
 ## Optional: append `-- --dir=res://some/folder` to run tests from another folder, and/or
-## `-- --only=text` to run only test files whose name contains `text`.
+## `-- --only=text` to run only test files whose name contains `text`, and/or
+## `-- --exclude=a,b` to skip files whose name contains any of the listed texts.
 ## Runs every `test_*` method in every `test_*.gd` file of the folder. A test fails
 ## if an assertion fails or if any engine/script error is logged while it runs.
 ## Tests may `await` frames (see test_case.gd); each one gets `tree` set to this SceneTree.
@@ -46,6 +47,7 @@ func _initialize() -> void:
 	await process_frame
 	capture.take()
 	for path in files:
+		var file_started := Time.get_ticks_msec()
 		var script: GDScript = load(path)
 		var load_errors := capture.take()
 		if script == null or not script.can_instantiate() or not load_errors.is_empty():
@@ -72,6 +74,7 @@ func _initialize() -> void:
 				print("FAIL %s::%s" % [path.get_file(), name])
 				for problem in problems:
 					print("     - " + problem)
+		print("  (%s: %.1f s)" % [path.get_file(), (Time.get_ticks_msec() - file_started) / 1000.0])
 	OS.remove_logger(capture)
 	if passed + failed == 0:
 		print("No tests found in %s" % dir_path)
@@ -90,12 +93,17 @@ func _requested_dir() -> String:
 
 func _test_files(dir_path: String) -> PackedStringArray:
 	var only := ""
+	var exclude := PackedStringArray()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):
 			only = arg.trim_prefix("--only=")
+		elif arg.begins_with("--exclude="):
+			exclude = arg.trim_prefix("--exclude=").split(",", false)
 	var result := PackedStringArray()
 	for file in DirAccess.get_files_at(dir_path):
-		if file.begins_with("test_") and file.ends_with(".gd") and (only.is_empty() or only in file):
+		if file.begins_with("test_") and file.ends_with(".gd") and file != "test_case.gd" and (only.is_empty() or only in file):
+			if Array(exclude).any(func(text): return text in file):
+				continue
 			result.append(dir_path.path_join(file))
 	result.sort()
 	return result
