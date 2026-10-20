@@ -16,6 +16,11 @@ const FlightWorld := preload("res://scripts/world/flight_world.gd")
 const FlightTraffic := preload("res://scripts/flight/flight_traffic.gd")
 const FlightSensor := preload("res://scripts/flight/flight_sensor.gd")
 const TrafficVisuals := preload("res://scripts/flight/traffic_visuals.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
+## Mission events that have a sound cue (each also has a visual sign in the HUD).
+const EVENT_CUES := {"takeoff": "takeoff", "checkpoint": "checkpoint", "wrong_checkpoint": "decision_rejected", "bump": "bump",
+	"hit": "impact", "time_warning": "timer_warning", "battery_warning": "timer_warning", "completed": "success",
+	"failed": "failure", "incoming_warning": "incoming"}
 const PAUSE_ACTIONS := [["resume", "Resume"], ["restart", "Restart mission"], ["controls", "Controls"], ["settings", "Settings"], ["menu", "Back to menu"]]
 const RESULT_ACTIONS := [["restart", "Fly again"], ["report", "Open report"], ["menu", "Back to menu"]]
 
@@ -30,6 +35,8 @@ var sensor: FlightSensor = null
 var traffic_visuals: Node3D = null
 var threat_stats := {}
 var incoming_warning: Dictionary = {}
+var cues: Node
+var _event_cursor := 0
 
 var _finished_shown := false
 
@@ -56,6 +63,9 @@ func _ready() -> void:
 	apply_profile()
 	mission.configure_limits(float(mission_def["time_limit_s"]), float(DroneProfiles.get_profile(profile_id)["endurance_s"]))
 	mission.message.connect(hud.show_message)
+	cues = AudioCues.attach(self)
+	cues.start_loop("rotor", -24.0, 0.8)
+	cues.play("mission_start")
 	_setup_traffic()
 	hud.overlay.action_pressed.connect(_on_menu_action)
 	hud.set_mission_title("%s · %s" % [mission_def["title"], DroneProfiles.get_profile(profile_id)["title"]])
@@ -157,6 +167,23 @@ func _physics_process(delta: float) -> void:
 	traffic_visuals.sync(traffic.active_entities())
 
 
+## Plays the cue for each new mission event and shapes the rotor sound from the
+## drone's speed and climb (quiet on the ground, higher pitch when fast).
+func _update_sound() -> void:
+	if cues == null:
+		return
+	var events: Array = mission.state.events
+	while _event_cursor < events.size():
+		var cue: String = EVENT_CUES.get(events[_event_cursor]["type"], "")
+		if not cue.is_empty():
+			cues.play(cue)
+		_event_cursor += 1
+	var airborne: bool = drone.altitude() > 0.3 and drone.controls_enabled
+	var speed_fraction: float = clampf(drone.horizontal_speed() / maxf(drone.max_horizontal_speed, 0.1), 0.0, 1.0)
+	var climb: float = clampf(drone.vertical_speed() / 3.0, -1.0, 1.0)
+	cues.set_loop("rotor", -9.0 if airborne else -24.0, 0.85 + 0.35 * speed_fraction + 0.15 * climb if airborne else 0.8)
+
+
 ## Radar picture and incoming warning for the HUD (sensor output only).
 func _update_radar() -> void:
 	if sensor == null or hud.radar == null:
@@ -202,6 +229,8 @@ func set_paused(paused: bool) -> void:
 	if mission and mission.state.is_finished():
 		paused = false
 	get_tree().paused = paused
+	if cues:
+		cues.set_paused_mix(paused)
 	if hud == null:
 		return
 	if paused:
@@ -249,6 +278,7 @@ func reset_mission() -> void:
 	_finished_shown = false
 	record = {}
 	saved_path = ""
+	_event_cursor = 0
 	_setup_traffic()
 	if hud:
 		hud.hide_overlay()
@@ -267,6 +297,7 @@ func _process(_delta: float) -> void:
 		status = "Paused"
 	hud.show_mission(mission.objective_text(), status)
 	_update_radar()
+	_update_sound()
 	if state.is_finished() and not _finished_shown:
 		_finished_shown = true
 		_finish()

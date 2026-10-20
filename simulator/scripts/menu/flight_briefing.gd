@@ -5,6 +5,7 @@ extends Control
 
 const AppState := preload("res://scripts/app/app_state.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const SettingsStore := preload("res://scripts/app/settings_store.gd")
 const DroneProfiles := preload("res://scripts/flight/drone_profiles.gd")
 const FlightMissions := preload("res://scripts/flight/flight_missions.gd")
@@ -24,6 +25,7 @@ var _profile_group := ButtonGroup.new()
 
 func _ready() -> void:
 	UiKit.background(self)
+	AudioCues.attach(self)
 	mission_id = FlightMissions.resolve_id(SettingsStore.get_value("flight_mission"))
 	profile_id = DroneProfiles.resolve_id(SettingsStore.get_value("drone_profile"))
 	var column := UiKit.screen_column(self, 1500, 14)

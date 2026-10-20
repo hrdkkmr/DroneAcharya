@@ -41,6 +41,7 @@ const PauseMenu := preload("res://scripts/ui/pause_menu.gd")
 const RadarDisplay := preload("res://scripts/ui/radar_display.gd")
 const ControlsReference := preload("res://scripts/ui/controls_reference.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const PAUSE_ACTIONS := [["resume", "Resume"], ["restart", "Restart exercise"], ["controls", "Controls"], ["settings", "Settings"], ["tutorial", "Tutorial"], ["menu", "Exit to menu"]]
 const RESULT_ACTIONS := [["restart", "Run again"], ["menu", "Exit to menu"]]
 const CONFIDENCE_LEVELS := [["Low", 30], ["Medium", 60], ["High", 90]]
@@ -393,6 +394,7 @@ func confirm() -> String:
 			if highlighted_response() in Vocabulary.ALARM_RESPONSES:
 				card_step = "confirm"
 				_render_card()
+				AudioCues.play_global("confirm_needed")
 				return "confirm_needed"
 			respond_requested.emit(highlighted_response())
 			return "respond"

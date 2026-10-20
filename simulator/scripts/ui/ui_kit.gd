@@ -18,6 +18,8 @@ const WARN := Color(1.0, 0.6, 0.25)
 const BAD := Color(1.0, 0.4, 0.35)
 const INFO := Color(0.45, 0.75, 1.0)
 
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
+
 static var _theme: Theme
 
 
@@ -159,6 +161,7 @@ static func button(text: String, callback: Callable, min_width := 0.0) -> Button
 	result.add_theme_font_size_override("font_size", 18)
 	result.custom_minimum_size = Vector2(min_width, 40)
 	result.pressed.connect(callback)
+	result.pressed.connect(AudioCues.play_global.bind("ui_click"))
 	return result
 
 

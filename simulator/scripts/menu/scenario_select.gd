@@ -4,6 +4,7 @@ extends Control
 
 const AppState := preload("res://scripts/app/app_state.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const ScenarioConfig := preload("res://scripts/sim/scenario_config.gd")
 const PRESET_DIR := "res://scenarios"
 
@@ -24,6 +25,7 @@ var _single: CheckBox
 
 func _ready() -> void:
 	UiKit.background(self)
+	AudioCues.attach(self)
 	var root := UiKit.hbox(16)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 32)
 	add_child(root)

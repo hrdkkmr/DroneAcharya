@@ -6,6 +6,7 @@ extends Control
 
 const AppState := preload("res://scripts/app/app_state.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
 const RuleEngine := preload("res://scripts/ai/rule_engine.gd")
 const DecisionPolicy := preload("res://scripts/ai/decision_policy.gd")
@@ -22,6 +23,7 @@ var latency_ms := -1.0
 
 func _ready() -> void:
 	UiKit.background(self)
+	AudioCues.attach(self)
 	var column := UiKit.screen_column(self, 1440, 14)
 	column.add_child(UiKit.header("Settings", "Settings & model information", "Changes are applied immediately and saved on this computer."))
 	var body := UiKit.hbox(28)

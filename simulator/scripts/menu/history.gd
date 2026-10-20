@@ -7,6 +7,7 @@ extends Control
 
 const AppState := preload("res://scripts/app/app_state.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const SessionIO := preload("res://scripts/training/session_io.gd")
 const Replay := preload("res://scripts/training/replay.gd")
 const ReportBuilder := preload("res://scripts/training/report_builder.gd")
@@ -37,6 +38,7 @@ var flights_dir := AppState.flight_sessions_dir
 
 func _ready() -> void:
 	UiKit.background(self)
+	AudioCues.attach(self)
 	var root := UiKit.screen_column(self, 1520, 10)
 	root.add_child(UiKit.header("Training history", "Reports", "Plain-language reports of your missions and exercises. Everything here is computed from what was recorded."))
 	var body := UiKit.hbox(20)

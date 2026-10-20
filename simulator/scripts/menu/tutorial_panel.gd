@@ -12,6 +12,7 @@ signal step_changed(index: int)
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
 const RadarDisplay := preload("res://scripts/ui/radar_display.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 
 const STEPS := [
 	{"title": "Your task", "diagram": "task",
@@ -50,6 +51,9 @@ var next_button: Button
 var back_button: Button
 var skip_button: Button
 var skip_confirm: HBoxContainer
+var cues_toggle: CheckBox
+## Step and practice sound cues (the guide is text only; this mutes its cues).
+var cues_enabled := true
 
 
 ## Draws the static diagrams with the same symbol styles as the real radar.
@@ -176,6 +180,11 @@ func _ready() -> void:
 	stage_box.add_child(practice_box)
 	_build_practice()
 	var buttons := UiKit.hbox(12)
+	cues_toggle = CheckBox.new()
+	cues_toggle.text = "Sound cues"
+	cues_toggle.button_pressed = true
+	cues_toggle.toggled.connect(func(on): cues_enabled = on)
+	buttons.add_child(cues_toggle)
 	skip_button = UiKit.button("Skip tutorial", request_skip, 170)
 	buttons.add_child(skip_button)
 	skip_confirm = UiKit.hbox(8)
@@ -238,7 +247,13 @@ func show_step(index: int) -> void:
 	back_button.disabled = step_index == 0
 	next_button.text = "Start training" if step_index == STEPS.size() - 1 and not embedded else ("Close tutorial" if step_index == STEPS.size() - 1 else "Next")
 	skip_confirm.visible = false
+	_cue("tutorial_step")
 	step_changed.emit(step_index)
+
+
+func _cue(name: String) -> void:
+	if cues_enabled:
+		AudioCues.play_global(name)
 
 
 func next() -> void:
@@ -266,6 +281,7 @@ func _on_practice_click(id: String) -> void:
 	if id == "T2":
 		practice_done["practice_select"] = true
 		practice_feedback.text = "Done ✓ — T2 is selected. Press Next."
+		_cue("decision_confirmed")
 	else:
 		practice_feedback.text = "That is %s. Click T2." % id
 
@@ -302,6 +318,7 @@ func practice_confirm() -> bool:
 	if chosen == "unknown":
 		practice_done["practice_classify"] = true
 		practice_feedback.text = "Done ✓ — classified as Unknown with low confidence. Press Next."
+		_cue("decision_confirmed")
 		return true
 	practice_feedback.text = "You confirmed \"%s\". Scroll to \"Unknown / insufficient evidence\" and right-click." % Vocabulary.CATEGORY_LABELS[chosen]
 	return false

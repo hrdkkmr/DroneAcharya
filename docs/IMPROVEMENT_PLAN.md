@@ -223,3 +223,14 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
     - `test_exercise_to_review_to_3d_replay_and_back` now finds "Decision timeline" under Details, and the plain report must contain "What went well".
     - New `test_reports.gd` (7 tests), including banned-phrase and reload-from-disk checks.
   - **Result:** suite **160/160**.
+- **2026-10-20 — Phase 5 complete:**
+  - **`sound_bank.gd`:** 18 procedurally generated cues plus rotor and wind loops, rendered once to 16-bit WAV. There are no audio files, so no third-party licences.
+  - **`audio_cues.gd`:** one per screen, freed with it.
+    - per-cue cooldowns and a pool of 6 players;
+    - loops are PAUSABLE and pause with the game;
+    - `CRITICAL_CUES` documents the visual sign shown with every alarm sound.
+  - **Flight:** a rotor loop whose pitch follows speed and climb, plus cues for mission start, takeoff, checkpoint, out-of-order ring, bump, hit, time and battery warnings, INCOMING, success and failure.
+  - **Observation:** a wind ambience, plus cues for new or reacquired contacts, lost contacts, sensor degradation, decision accepted or rejected, alarm confirmation and the exercise end.
+  - **Shared UI and tutorial:** shared buttons click. The tutorial has step and practice cues with a "Sound cues" toggle.
+  - **Narration:** none. The tutorial is text plus cues; voice narration is listed as a later enhancement.
+  - **Tests:** new `test_audio.gd` (7 tests). Suite **167/167**.

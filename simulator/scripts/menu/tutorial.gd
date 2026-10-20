@@ -12,6 +12,7 @@ var panel: TutorialPanel
 
 func _ready() -> void:
 	get_tree().paused = false
+	load("res://scripts/audio/audio_cues.gd").attach(self)
 	panel = TutorialPanel.new()
 	add_child(panel)
 	panel.finished.connect(_on_finished)

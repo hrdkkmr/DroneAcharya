@@ -6,6 +6,7 @@ extends Control
 const TITLE := "DroneAcharya — synthetic training only"
 const AppState := preload("res://scripts/app/app_state.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const SettingsStore := preload("res://scripts/app/settings_store.gd")
 
 ## Main entries: [scene key, title, description]. A scene whose file does not exist
@@ -31,6 +32,7 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	SettingsStore.apply()
 	UiKit.background(self)
+	AudioCues.attach(self)
 	var title: Label = $Title
 	title.text = TITLE
 	title.add_theme_font_size_override("font_size", 14)
@@ -91,6 +93,7 @@ func _entry(key: String, title: String, description: String) -> Button:
 	button.custom_minimum_size = Vector2(560, 100)
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.pressed.connect(_open.bind(key))
+	button.pressed.connect(AudioCues.play_global.bind("ui_click"))
 	button.tooltip_text = description
 	var rows := UiKit.vbox(2)
 	rows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 14)

@@ -23,6 +23,10 @@ const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
 const TutorialPanel := preload("res://scripts/menu/tutorial_panel.gd")
 const SettingsStore := preload("res://scripts/app/settings_store.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
+## Session events with a sound cue during a live exercise (each also appears on screen).
+const EVENT_CUES := {"track_confirmed": "contact_detected", "track_reacquired": "contact_detected", "track_lost": "contact_lost",
+	"sensor_degraded": "sensor_alert"}
 const CLICK_MAX_DRAG_PX := 6.0 ## a right-button press that moves less than this is a click (confirm), not a look-drag
 const DEFAULT_SCENARIO := "res://scenarios/01_single_rural_day.json"
 
@@ -50,6 +54,8 @@ var _end_shown := false
 var _right_press := Vector2.ZERO
 var _right_drag := 0.0
 var _tutorial: TutorialPanel
+var cues: Node
+var _event_cursor := 0
 
 @onready var world_root: Node3D = $World
 @onready var actors_root: Node3D = $Actors
@@ -61,6 +67,7 @@ func _ready() -> void:
 	config = AppState.selected_config
 	if config.is_empty():
 		config = ScenarioConfig.load_file(DEFAULT_SCENARIO)["config"]
+	cues = AudioCues.attach(self)
 	overlay = TrackOverlay.new()
 	overlay.camera = observer.eye_camera
 	overlay.track_clicked.connect(select_track)
@@ -100,6 +107,8 @@ func start_session() -> void:
 	saved_path = ""
 	hud.set_replay_mode(false, 0)
 	session.start()
+	_event_cursor = 0
+	cues.start_loop("wind", -20.0, 1.0)
 
 
 ## Re-simulates a recorded session with the recorded trainee actions.
@@ -223,6 +232,12 @@ func _update_truth_labels() -> void:
 func _process(delta: float) -> void:
 	if session == null:
 		return
+	if replay == null:
+		while _event_cursor < session.events.size():
+			var cue: String = EVENT_CUES.get(session.events[_event_cursor]["type"], "")
+			if not cue.is_empty():
+				cues.play(cue)
+			_event_cursor += 1
 	hud.refresh(session, selected_track, view_text(), delta)
 	hud.update_radar(session, observer.global_position, observer.yaw_degrees, observer.fov, selected_track)
 	if replay != null:
@@ -256,6 +271,7 @@ func finish_and_score() -> void:
 		lines.append("✗ " + report["improve"][0])
 	lines.append("Saved to training history." if saved["ok"] else "Not saved: " + saved["error"])
 	hud.show_overlay("Exercise ended" if session.status == ThreatSession.Status.COMPLETED else "Exercise aborted", "\n".join(lines))
+	cues.play("success" if session.status == ThreatSession.Status.COMPLETED else "failure")
 	hud.set_review_available(saved["ok"])
 
 
@@ -293,6 +309,7 @@ func _on_decision_support_toggled(on: bool) -> void:
 
 func _feedback(result: Dictionary) -> void:
 	hud.show_feedback(result["message"], result["ok"])
+	cues.play("decision_confirmed" if result["ok"] else "decision_rejected")
 	hud.refresh(session, selected_track, view_text(), 1.0)
 
 
@@ -432,10 +449,12 @@ func toggle_pause() -> void:
 	if get_tree().paused:
 		session.resume()
 		get_tree().paused = false
+		cues.set_paused_mix(false)
 		hud.hide_overlay()
 	else:
 		session.pause()
 		get_tree().paused = true
+		cues.set_paused_mix(true)
 		hud.show_pause()
 
 

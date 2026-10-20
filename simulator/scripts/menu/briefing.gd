@@ -4,6 +4,7 @@ extends Control
 
 const AppState := preload("res://scripts/app/app_state.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const AudioCues := preload("res://scripts/audio/audio_cues.gd")
 const ScenarioSelect := preload("res://scripts/menu/scenario_select.gd")
 const ControlsReference := preload("res://scripts/ui/controls_reference.gd")
 
@@ -19,6 +20,7 @@ var start_button: Button
 
 func _ready() -> void:
 	UiKit.background(self)
+	AudioCues.attach(self)
 	var column := UiKit.screen_column(self, 1500, 12)
 	column.add_child(UiKit.header("Threat detection training", "Briefing", "Read the situation, then start. The exercise clock starts when you press Start."))
 	var body := UiKit.hbox(24)
