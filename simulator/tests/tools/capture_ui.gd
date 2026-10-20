@@ -27,7 +27,7 @@ func _initialize() -> void:
 	AppState.sessions_dir = "user://test_runs/capture_sessions"
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	await process_frame
-	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause"]:
+	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village"]:
 		if only.is_empty() or shot in only:
 			await call(shot)
 	quit(0)
@@ -88,6 +88,36 @@ func observation_pause() -> void:
 	var scene := await _goto("observation")
 	scene.toggle_pause()
 	await _save("observation_pause")
+
+
+func city() -> void:
+	await _environment("city_delivery", "city", Vector3(-90, 3, -50), Vector3(-30, 60, 40), Vector3(30, 0, -150))
+
+
+func village() -> void:
+	await _environment("village_supply", "village", Vector3(-40, 3, 0), Vector3(-120, 70, 60), Vector3(40, 0, -150))
+
+
+## Chase view after a short climb, then a high oblique overview from a scratch camera.
+func _environment(mission: String, shot: String, start: Vector3, overview_from: Vector3, overview_to: Vector3) -> void:
+	AppState.flight_mission = mission
+	var scene := await _goto("flight")
+	Input.action_press("ascend")
+	for i in 150:
+		await physics_frame
+	Input.action_release("ascend")
+	Input.action_press("move_forward")
+	for i in 60:
+		await physics_frame
+	Input.action_release("move_forward")
+	await _save(shot + "_chase")
+	var camera := Camera3D.new()
+	camera.far = 2000.0
+	scene.add_child(camera)
+	camera.look_at_from_position(overview_from, overview_to)
+	camera.make_current()
+	await _save(shot + "_overview")
+	AppState.flight_mission = "basic_course"
 
 
 func _goto(scene: String) -> Node:

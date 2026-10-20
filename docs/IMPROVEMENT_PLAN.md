@@ -149,3 +149,19 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
     - One existing test was updated: `test_main_menu_lists_all_modes_and_opens_flight_training` now passes through the flight briefing before flying (the menu flow changed by design; the assertion that a flight scene with a drone loads is kept).
     - New `test_drone_profiles_and_missions.gd` (14 tests).
   - **Result:** suite **129/129**, autopilot 23.9 s.
+- **2026-10-20 — Phase 2b complete:**
+  - **Builders:** procedural `city_builder.gd` and `village_builder.gd` on shared `props.gd`:
+    - MultiMesh batches with per-instance colour;
+    - a world-space window facade shader;
+    - named obstacle bodies, with collision only on buildings, poles, wires, walls, trees, tanks, the crane and similar.
+  - **Route corridor:** `route_corridor.gd` keeps every mission route clear.
+  - **Mission assembly:** `flight_world.gd` adds the launch pad, rings and landing zone.
+  - **Four new missions:** City delivery, Village supply run, and a hostile-area variant of each. The threats are added in Phase 2c.
+  - **Test support:** the test autopilot gained an optional landing cruise altitude (default unchanged, 4 m).
+  - **Tests:** new `test_environments.gd` (5 tests):
+    - build;
+    - determinism;
+    - collision budget;
+    - a shape-cast along every route segment;
+    - autopilot completes city in 68.3 s and village in 63.2 s.
+  - **Result:** suite **134/134**.

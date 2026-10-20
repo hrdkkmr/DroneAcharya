@@ -12,6 +12,7 @@ const SettingsStore := preload("res://scripts/app/settings_store.gd")
 const DroneProfiles := preload("res://scripts/flight/drone_profiles.gd")
 const FlightMissions := preload("res://scripts/flight/flight_missions.gd")
 const FlightRecord := preload("res://scripts/flight/flight_record.gd")
+const FlightWorld := preload("res://scripts/world/flight_world.gd")
 const PAUSE_ACTIONS := [["resume", "Resume"], ["restart", "Restart mission"], ["controls", "Controls"], ["settings", "Settings"], ["menu", "Back to menu"]]
 const RESULT_ACTIONS := [["restart", "Fly again"], ["report", "Open report"], ["menu", "Back to menu"]]
 
@@ -39,6 +40,8 @@ func _ready() -> void:
 		return
 	mission_def = FlightMissions.get_mission(AppState.flight_mission)
 	profile_id = DroneProfiles.resolve_id(AppState.flight_profile)
+	if FlightWorld.supports(mission_def["environment"]):
+		_build_environment()
 	_apply_quality()
 	spawn_transform = drone.global_transform
 	apply_profile()
@@ -48,6 +51,29 @@ func _ready() -> void:
 	hud.set_mission_title("%s · %s" % [mission_def["title"], DroneProfiles.get_profile(profile_id)["title"]])
 	hud.hide_overlay()
 	hud.show_message("Hold Space to take off. Fly through the rings in order, then land.", 6.0)
+
+
+## Replaces the hand-built course with the mission's procedural environment and
+## points the mission at the new rings and landing zone.
+func _build_environment() -> void:
+	var course := get_node_or_null("Course")
+	if course:
+		remove_child(course)
+		course.free()
+	var world := Node3D.new()
+	world.name = "World"
+	world.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(world)
+	move_child(world, 0)
+	var built := FlightWorld.build(world, mission_def, SettingsStore.effects_reduced())
+	drone.global_transform = built["spawn"]
+	drone.reset_physics_interpolation()
+	mission.checkpoints_path = mission.get_path_to(world.get_node("Checkpoints"))
+	mission.landing_zone_path = mission.get_path_to(world.get_node("LandingZone"))
+	mission.training_area = built["area"]
+	mission.setup()
+	if camera_rig and camera_rig.has_method("snap"):
+		camera_rig.snap()
 
 
 func _apply_quality() -> void:

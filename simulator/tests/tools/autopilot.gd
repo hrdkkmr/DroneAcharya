@@ -8,6 +8,10 @@ const STEER_ACTIONS := [
 const BRAKING := 6.0 ## m/s²; matches the drone's acceleration when reversing direction
 const CRUISE_ALTITUDE_FOR_LANDING := 4.0
 
+## Height kept on the way to the landing zone (raised for missions where 4 m would
+## clip street furniture); descends only once above the zone.
+var landing_cruise_altitude := CRUISE_ALTITUDE_FOR_LANDING
+
 
 ## Steers toward `target`. With `land` true it stops above the target and descends.
 func steer(drone: CharacterBody3D, target: Vector3, land: bool) -> void:
@@ -36,7 +40,7 @@ func steer(drone: CharacterBody3D, target: Vector3, land: bool) -> void:
 
 	var target_altitude := target.y
 	if land:
-		target_altitude = CRUISE_ALTITUDE_FOR_LANDING if horizontal_distance > 1.5 else -1.0
+		target_altitude = landing_cruise_altitude if horizontal_distance > 1.5 else -1.0
 	var climb := target_altitude - drone.global_position.y
 	_press("ascend", climb > 0.3)
 	_press("descend", climb < -0.3)
