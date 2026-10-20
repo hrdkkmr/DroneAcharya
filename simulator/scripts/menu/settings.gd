@@ -1,5 +1,6 @@
 extends Control
-## Settings and model information: which decision components exist, how each works
+## Settings (audio, mouse, effects quality; see settings_panel.gd) and model
+## information: which decision components exist, how each works
 ## (rule-based or trained ML), their versions and status, the held-out evaluation
 ## results shipped with the ML model, and a live inference-latency measurement.
 
@@ -10,8 +11,10 @@ const RuleEngine := preload("res://scripts/ai/rule_engine.gd")
 const DecisionPolicy := preload("res://scripts/ai/decision_policy.gd")
 const Features := preload("res://scripts/ai/features.gd")
 const Rubric := preload("res://scripts/training/rubric.gd")
+const SettingsPanel := preload("res://scripts/ui/settings_panel.gd")
 const PARITY := "res://tests/fixtures/ml_parity_v1.json"
 
+var settings_panel: SettingsPanel
 var ml_toggle: CheckBox
 var info_label: RichTextLabel
 var latency_ms := -1.0
@@ -19,22 +22,32 @@ var latency_ms := -1.0
 
 func _ready() -> void:
 	UiKit.background(self)
-	var column := UiKit.vbox(10)
-	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 40)
-	add_child(column)
-	column.add_child(UiKit.label("Settings & model information", 30))
+	var column := UiKit.screen_column(self, 1440, 14)
+	column.add_child(UiKit.header("Settings", "Settings & model information", "Changes are applied immediately and saved on this computer."))
+	var body := UiKit.hbox(28)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(body)
+	var left := UiKit.card()
+	left.custom_minimum_size = Vector2(620, 0)
+	left.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	body.add_child(left)
+	settings_panel = SettingsPanel.new()
+	left.add_child(settings_panel)
+	var right := UiKit.vbox(10)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(right)
+	right.add_child(UiKit.heading("Decision support models"))
 	ml_toggle = CheckBox.new()
 	ml_toggle.text = "Use the trained ML classifier (Model 2) in decision support when it loads"
 	ml_toggle.button_pressed = AppState.use_ml
 	ml_toggle.toggled.connect(func(on): AppState.use_ml = on)
-	column.add_child(ml_toggle)
-	info_label = RichTextLabel.new()
-	info_label.bbcode_enabled = true
+	right.add_child(ml_toggle)
+	info_label = UiKit.rich(15, false)
 	info_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	info_label.add_theme_font_size_override("normal_font_size", 16)
-	info_label.add_theme_font_size_override("bold_font_size", 16)
-	column.add_child(info_label)
-	column.add_child(UiKit.button("Back to menu", AppState.goto.bind(get_tree(), "menu"), 200))
+	right.add_child(info_label)
+	var back := UiKit.button("Back to menu", AppState.goto.bind(get_tree(), "menu"), 200)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	column.add_child(back)
 	latency_ms = measure_latency(MlClassifier.shared())
 	info_label.text = describe(MlClassifier.shared(), latency_ms)
 

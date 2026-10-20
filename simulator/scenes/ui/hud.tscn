@@ -118,26 +118,6 @@ theme_override_font_sizes/font_size = 20
 text = "-"
 autowrap_mode = 3
 
-[node name="Controls" type="PanelContainer" parent="."]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = -196.0
-offset_right = 306.0
-offset_bottom = -16.0
-grow_vertical = 0
-theme_override_styles/panel = SubResource("Panel")
-
-[node name="Text" type="Label" parent="Controls"]
-layout_mode = 2
-text = "W / S      forward / back
-A / D      left / right
-Q / E      turn left / right
-Space / C  climb / descend
-V          switch camera
-R          restart    Esc  pause"
-
 [node name="Message" type="Label" parent="."]
 anchors_preset = 10
 anchor_right = 1.0
@@ -149,33 +129,3 @@ theme_override_constants/outline_size = 8
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 horizontal_alignment = 1
 visible = false
-
-[node name="Overlay" type="PanelContainer" parent="."]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = 140.0
-offset_right = 300.0
-offset_bottom = 290.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("Panel")
-visible = false
-
-[node name="Rows" type="VBoxContainer" parent="Overlay"]
-layout_mode = 2
-alignment = 1
-
-[node name="OverlayTitle" type="Label" parent="Overlay/Rows"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 40
-horizontal_alignment = 1
-
-[node name="OverlayDetail" type="Label" parent="Overlay/Rows"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-horizontal_alignment = 1
-autowrap_mode = 3

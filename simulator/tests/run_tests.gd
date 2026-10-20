@@ -43,6 +43,11 @@ func _initialize() -> void:
 	print("Running tests in %s" % dir_path)
 	# Tests never write into the real training history.
 	load("res://scripts/app/app_state.gd").sessions_dir = "user://test_runs/sessions"
+	# ...nor into the real settings file.
+	var settings_store = load("res://scripts/app/settings_store.gd")
+	settings_store.path = "user://test_runs/settings.cfg"
+	DirAccess.remove_absolute(settings_store.path)
+	settings_store.load_settings()
 	# Nodes added to the root are not inside the tree until the first frame has run.
 	await process_frame
 	capture.take()

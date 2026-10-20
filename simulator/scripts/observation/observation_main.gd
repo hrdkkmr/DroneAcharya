@@ -126,7 +126,8 @@ func _build_world() -> void:
 	overlay.selected_id = ""
 	_accumulator = 0.0
 	_end_shown = false
-	hud.overlay.visible = false
+	hud.hide_overlay()
+	hud.set_review_available(false)
 	get_tree().paused = false
 	set_sensor_view(false)
 
@@ -187,7 +188,7 @@ func seek_replay(tick: int) -> void:
 	_replay_position = float(session.tick())
 	_previous.clear()
 	_end_shown = false
-	hud.overlay.visible = false
+	hud.hide_overlay()
 	_update_truth_labels()
 	hud.refresh(session, selected_track, view_text(), 1.0)
 
@@ -343,11 +344,11 @@ func toggle_pause() -> void:
 	if get_tree().paused:
 		session.resume()
 		get_tree().paused = false
-		hud.overlay.visible = false
+		hud.hide_overlay()
 	else:
 		session.pause()
 		get_tree().paused = true
-		hud.show_overlay("Paused", "Esc: resume · R: restart")
+		hud.show_pause()
 
 
 func exit_to_menu() -> void:

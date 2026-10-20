@@ -1,6 +1,10 @@
 extends CanvasLayer
 ## Displays values handed to it by Main; it holds no simulation state of its own.
+## The pause / result screen is a shared PauseMenu created here; `overlay`,
+## `overlay_title` and `overlay_detail` refer to it.
 
+const PauseMenu := preload("res://scripts/ui/pause_menu.gd")
+const UiKit := preload("res://scripts/ui/ui_kit.gd")
 const COMPASS_POINTS := ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 
 var _message_time_left := 0.0
@@ -14,9 +18,17 @@ var _message_time_left := 0.0
 @onready var objective_value: Label = $Mission/Rows/ObjectiveValue
 @onready var status_value: Label = $Mission/Rows/StatusValue
 @onready var message_label: Label = $Message
-@onready var overlay: PanelContainer = $Overlay
-@onready var overlay_title: Label = $Overlay/Rows/OverlayTitle
-@onready var overlay_detail: Label = $Overlay/Rows/OverlayDetail
+var overlay: PauseMenu
+var overlay_title: Label
+var overlay_detail: Label
+
+
+func _ready() -> void:
+	overlay = PauseMenu.new()
+	overlay.name = "PauseMenu"
+	add_child(overlay)
+	overlay_title = overlay.title_label
+	overlay_detail = overlay.detail_label
 
 
 static func format_altitude(metres: float) -> String:
@@ -63,14 +75,13 @@ func show_message(text: String, seconds := 3.0) -> void:
 	_message_time_left = seconds
 
 
-func show_overlay(title: String, detail: String) -> void:
-	overlay_title.text = title
-	overlay_detail.text = detail
-	overlay.visible = true
+## `actions`: [id, label] pairs for the buttons; `controls`: rows for the Controls section.
+func show_overlay(title: String, detail: String, actions: Array = [], controls: Array = []) -> void:
+	overlay.open(title, detail, actions, controls)
 
 
 func hide_overlay() -> void:
-	overlay.visible = false
+	overlay.close()
 
 
 func _process(delta: float) -> void:

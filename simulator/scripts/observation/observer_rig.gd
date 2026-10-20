@@ -8,6 +8,7 @@ const EYE_MIN_FOV := 20.0
 const SENSOR_MAX_FOV := 30.0
 const SENSOR_MIN_FOV := 2.0
 const KEY_LOOK_DEGREES_PER_SECOND := 60.0
+const SettingsStore := preload("res://scripts/app/settings_store.gd")
 
 @export var mouse_sensitivity := 0.25 ## degrees per pixel at full zoom-out
 
@@ -26,7 +27,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
-		var scale := mouse_sensitivity * fov / MAX_FOV
+		var scale := mouse_sensitivity * float(SettingsStore.get_value("mouse_sensitivity")) * fov / MAX_FOV
 		yaw_degrees -= event.relative.x * scale
 		pitch_degrees -= event.relative.y * scale
 		_apply()

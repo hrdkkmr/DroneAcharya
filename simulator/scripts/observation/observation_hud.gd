@@ -19,6 +19,10 @@ signal replay_seek_requested(tick: int)
 signal truth_labels_toggled(visible: bool)
 
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const PauseMenu := preload("res://scripts/ui/pause_menu.gd")
+const ControlsReference := preload("res://scripts/ui/controls_reference.gd")
+const PAUSE_ACTIONS := [["resume", "Resume"], ["restart", "Restart exercise"], ["controls", "Controls"], ["settings", "Settings"], ["menu", "Exit to menu"]]
+const RESULT_ACTIONS := [["restart", "Run again"], ["menu", "Exit to menu"]]
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
 const RIGHT_WIDTH := 480.0
 const LEFT_WIDTH := 430.0
@@ -27,7 +31,7 @@ var info_label: Label
 var sensor_label: RichTextLabel
 var track_tree: Tree
 var details_label: RichTextLabel
-var overlay: PanelContainer
+var overlay: PauseMenu
 var overlay_title: Label
 var overlay_detail: Label
 var right_column: VBoxContainer
@@ -209,28 +213,26 @@ func _rich(size: int) -> RichTextLabel:
 
 
 func _build_overlay() -> void:
-	overlay = UiKit.panel(0.92)
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	overlay.custom_minimum_size = Vector2(540, 0)
-	overlay.position -= Vector2(270 + RIGHT_WIDTH / 2.0, 90)
-	var rows := UiKit.vbox(10)
-	overlay_title = UiKit.label("", 32)
-	overlay_detail = UiKit.label("", 17, UiKit.MUTED, true)
-	rows.add_child(overlay_title)
-	rows.add_child(overlay_detail)
-	var buttons := UiKit.hbox(10)
-	buttons.name = "Buttons"
-	buttons.add_child(UiKit.button("Resume", func(): resume_requested.emit(), 140))
-	buttons.add_child(UiKit.button("Restart", func(): restart_requested.emit(), 140))
-	buttons.add_child(UiKit.button("Exit", func(): exit_requested.emit(), 100))
-	review_button = UiKit.button("After-action review", func(): review_requested.emit(), 200)
-	review_button.visible = false
-	buttons.add_child(review_button)
-	rows.add_child(buttons)
-	overlay.add_child(rows)
-	overlay.visible = false
+	overlay = PauseMenu.new()
+	overlay.name = "PauseMenu"
 	add_child(overlay)
+	overlay_title = overlay.title_label
+	overlay_detail = overlay.detail_label
+	overlay.action_pressed.connect(_on_overlay_action)
+	review_button = UiKit.primary_button("Open the after-action report", func(): review_requested.emit(), 320)
+	review_button.visible = false
+	overlay.extra.add_child(review_button)
 	_build_replay_bar()
+
+
+func _on_overlay_action(id: String) -> void:
+	match id:
+		"resume":
+			resume_requested.emit()
+		"restart":
+			restart_requested.emit()
+		"menu":
+			exit_requested.emit()
 
 
 func _build_replay_bar() -> void:
@@ -292,10 +294,17 @@ func set_review_available(available: bool) -> void:
 	review_button.visible = available
 
 
-func show_overlay(title: String, detail: String) -> void:
-	overlay_title.text = title
-	overlay_detail.text = detail
-	overlay.visible = true
+func show_overlay(title: String, detail: String, actions: Array = RESULT_ACTIONS) -> void:
+	overlay.open(title, detail, actions, ControlsReference.OBSERVATION)
+
+
+func show_pause() -> void:
+	review_button.visible = false
+	show_overlay("Paused", "The exercise clock is stopped while paused.", PAUSE_ACTIONS)
+
+
+func hide_overlay() -> void:
+	overlay.close()
 
 
 func set_sensor_view(enabled: bool, thermal: bool) -> void:

@@ -1,9 +1,15 @@
 extends Node3D
-## Stage 1 root: wires the course, drone, camera, mission and HUD together and handles
-## pause (Esc) and restart (R). Runs while the game is paused so those keys always work.
+## Flight-training root: wires the course, drone, camera, mission and HUD together and
+## handles the pause menu (Esc) and restart (R). Runs while the game is paused so those
+## keys always work; everything that simulates is PAUSABLE.
 
 const TITLE := "DroneAcharya — synthetic training only"
 const MissionState := preload("res://scripts/mission/mission_state.gd")
+const AppState := preload("res://scripts/app/app_state.gd")
+const ControlsReference := preload("res://scripts/ui/controls_reference.gd")
+const SettingsStore := preload("res://scripts/app/settings_store.gd")
+const PAUSE_ACTIONS := [["resume", "Resume"], ["restart", "Restart mission"], ["controls", "Controls"], ["settings", "Settings"], ["menu", "Back to menu"]]
+const RESULT_ACTIONS := [["restart", "Fly again"], ["controls", "Controls"], ["menu", "Back to menu"]]
 
 var spawn_transform := Transform3D.IDENTITY
 
@@ -18,6 +24,9 @@ var _finished_shown := false
 
 func _ready() -> void:
 	_title.text = TITLE
+	var sun := get_node_or_null("Course/Sun") as DirectionalLight3D
+	if sun and SettingsStore.effects_reduced():
+		sun.shadow_enabled = false
 	if drone == null or mission == null or hud == null:
 		push_warning("Main scene is missing Drone, Mission or HUD; simulator controls are disabled.")
 		set_process(false)
@@ -25,6 +34,7 @@ func _ready() -> void:
 		return
 	spawn_transform = drone.global_transform
 	mission.message.connect(hud.show_message)
+	hud.overlay.action_pressed.connect(_on_menu_action)
 	hud.hide_overlay()
 	hud.show_message("Hold Space to take off. Fly through the rings in order, then land.", 6.0)
 
@@ -45,9 +55,25 @@ func set_paused(paused: bool) -> void:
 	if hud == null:
 		return
 	if paused:
-		hud.show_overlay("Paused", "Esc: resume    R: restart mission")
+		hud.show_overlay("Paused", "The mission clock is stopped while paused.", PAUSE_ACTIONS, ControlsReference.FLIGHT)
 	else:
 		hud.hide_overlay()
+
+
+func _on_menu_action(id: String) -> void:
+	match id:
+		"resume":
+			set_paused(false)
+		"restart":
+			reset_mission()
+		"menu":
+			back_to_menu()
+
+
+## Leaves flight training. The scene (drone, mission, sounds) is freed by the change.
+func back_to_menu() -> void:
+	get_tree().paused = false
+	AppState.goto(get_tree(), "menu")
 
 
 ## Puts the drone back on the launch pad and restarts the mission from checkpoint 1.
@@ -77,7 +103,7 @@ func _process(_delta: float) -> void:
 	if state.is_finished() and not _finished_shown:
 		_finished_shown = true
 		if state.status == MissionState.Status.COMPLETED:
-			hud.show_overlay("Mission complete", "Time %s    R: fly again" % hud.format_time(state.elapsed_seconds))
+			hud.show_overlay("Mission complete", "Time %s" % hud.format_time(state.elapsed_seconds), RESULT_ACTIONS, ControlsReference.FLIGHT)
 		else:
 			var reason := state.failure_reason.left(1).to_upper() + state.failure_reason.substr(1)
-			hud.show_overlay("Mission failed", "%s\nR: restart" % reason)
+			hud.show_overlay("Mission failed", reason, RESULT_ACTIONS, ControlsReference.FLIGHT)

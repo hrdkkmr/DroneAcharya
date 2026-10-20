@@ -4,6 +4,7 @@ extends RefCounted
 ## protected zone and observation tower. Purely visual; the simulation and sensor
 ## use the definition's obstacle boxes directly.
 
+const SettingsStore := preload("res://scripts/app/settings_store.gd")
 const FOG_DENSITY := {"clear": 0.0006, "haze": 0.003, "fog": 0.012}
 
 
@@ -55,7 +56,7 @@ static func _light(night: bool) -> DirectionalLight3D:
 	light.rotation = Vector3(deg_to_rad(-35.0 if night else -50.0), deg_to_rad(-30.0), 0.0)
 	light.light_energy = 0.18 if night else 1.0
 	light.light_color = Color(0.6, 0.7, 1.0) if night else Color(1.0, 0.97, 0.92)
-	light.shadow_enabled = not night
+	light.shadow_enabled = not night and not SettingsStore.effects_reduced()
 	light.directional_shadow_max_distance = 300.0
 	return light
 

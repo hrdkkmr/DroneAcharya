@@ -10,6 +10,7 @@ const SCENES := {
 	"observation": "res://scenes/observation/observation.tscn",
 	"history": "res://scenes/menu/history.tscn",
 	"settings": "res://scenes/menu/settings.tscn",
+	"tutorial": "res://scenes/menu/tutorial.tscn",
 }
 
 ## Validated droneacharya-scenario config chosen on the selection screen.
