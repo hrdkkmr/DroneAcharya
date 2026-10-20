@@ -193,3 +193,42 @@ func test_history_lists_flight_and_threat_reports() -> void:
 	history.toggle_details()
 	assert_true(history.details_label.visible and "Event log" in history.details_label.text, "details on request")
 	AppState.review_session = {}
+
+
+## Regression: a flight record with the right keys but wrong contents passed validation
+## and stopped the history screen with a script error, hiding every other report.
+func test_malformed_flight_records_are_listed_as_invalid_not_shown() -> void:
+	var dir: String = AppState.flight_sessions_dir
+	DirAccess.make_dir_recursive_absolute(dir)
+	for name in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(dir.path_join(name))
+	var good := _flight_record(true)
+	assert_true(FlightRecord.validate(good)["ok"], "a record built by the simulator is valid")
+	assert_true(FlightRecord.save(good, dir)["ok"], "valid record saved")
+	var bad_mission := _flight_record(false)
+	bad_mission["session_id"] = "flight-bad-mission"
+	bad_mission["mission"] = "not a dictionary"
+	var bad_event := _flight_record(false)
+	bad_event["session_id"] = "flight-bad-event"
+	bad_event["events"].append({"t": 1.0, "type": "bump", "data": {}})
+	for record in [bad_mission, bad_event]:
+		assert_true(not FlightRecord.validate(record)["ok"], "%s refused" % record["session_id"])
+		var file := FileAccess.open(dir.path_join(record["session_id"] + ".json"), FileAccess.WRITE)
+		file.store_string(JSON.stringify(record))
+		file.close()
+	AppState.review_session = {}
+	AppState.goto(tree, "history")
+	var history: Node = null
+	for i in 10:
+		await tree.process_frame
+		if tree.current_scene and tree.current_scene.scene_file_path == AppState.SCENES["history"]:
+			history = tree.current_scene
+			break
+	assert_true(history != null, "history opened")
+	assert_eq(history.flights.size(), 1, "the valid flight record is still listed")
+	var refused: Array = history.invalid.filter(func(i): return String(i["file"]).begins_with("flight-bad-"))
+	assert_eq(refused.size(), 2, "both malformed files reported as invalid")
+	assert_true("flight-bad-mission.json" in history.invalid_label.text, "invalid files named on screen")
+	assert_true("Mission result" in history.report_label.text, "the valid report is shown")
+	for name in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(dir.path_join(name))

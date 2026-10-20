@@ -11,6 +11,14 @@ const SUPPORTED_VERSIONS := [1]
 const STATUS_NAMES := ["ready", "flying", "completed", "failed"]
 const REQUIRED := ["format", "format_version", "session_id", "created_at", "mission", "profile", "result", "events"]
 const MAX_BYTES := 2 * 1024 * 1024
+## Result fields the history screen and the report read, and the keys each event type
+## needs: a record missing them is refused instead of breaking the history screen.
+const RESULT_NUMBERS := ["elapsed_s", "checkpoints_passed", "checkpoint_count", "integrity_end"]
+const EVENT_DATA := {
+	"checkpoint": ["number", "of"], "wrong_checkpoint": ["entered", "expected"], "bump": ["obstacle", "speed"],
+	"hit": ["source", "integrity"], "incoming_warning": ["eta_s"], "time_warning": ["remaining_s"],
+	"battery_warning": ["battery"], "early_landing": ["remaining_checkpoints"], "failed": ["reason"],
+}
 
 
 static func build(state: RefCounted, mission: Dictionary, profile_id: String, profile: Dictionary, session_id: String,
@@ -57,12 +65,35 @@ static func validate(record: Variant) -> Dictionary:
 		errors.append("format is '%s', expected '%s'" % [record["format"], FORMAT])
 	if not int(record["format_version"]) in SUPPORTED_VERSIONS:
 		errors.append("unsupported format_version %s" % record["format_version"])
+	if typeof(record["session_id"]) != TYPE_STRING or typeof(record["created_at"]) != TYPE_STRING:
+		errors.append("session_id and created_at must be text")
+	var mission = record["mission"]
+	if typeof(mission) != TYPE_DICTIONARY or typeof(mission.get("title")) != TYPE_STRING or typeof(mission.get("environment")) != TYPE_STRING:
+		errors.append("mission must have a title and an environment")
+	if typeof(record["profile"]) != TYPE_DICTIONARY or typeof(record["profile"].get("title")) != TYPE_STRING:
+		errors.append("profile must have a title")
 	var result = record["result"]
 	if typeof(result) != TYPE_DICTIONARY or not result.has("status") or not result.get("status") in STATUS_NAMES:
 		errors.append("result.status missing or unknown")
+	else:
+		for key in RESULT_NUMBERS:
+			if not _is_number(result.get(key)):
+				errors.append("result.%s must be a number" % key)
+		if typeof(result.get("checkpoint_times")) != TYPE_ARRAY:
+			errors.append("result.checkpoint_times must be an array")
 	if typeof(record["events"]) != TYPE_ARRAY:
 		errors.append("events must be an array")
+	else:
+		for ev in record["events"]:
+			if typeof(ev) != TYPE_DICTIONARY or not _is_number(ev.get("t")) or typeof(ev.get("type")) != TYPE_STRING \
+					or typeof(ev.get("data")) != TYPE_DICTIONARY or not ev["data"].has_all(EVENT_DATA.get(ev["type"], [])):
+				errors.append("malformed event in events")
+				break
 	return {"ok": errors.is_empty(), "errors": errors}
+
+
+static func _is_number(value: Variant) -> bool:
+	return typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT
 
 
 static func save(record: Dictionary, dir: String) -> Dictionary:

@@ -196,8 +196,8 @@ func export_selected() -> Dictionary:
 	if selected.is_empty():
 		return {}
 	if is_flight(selected):
-		DirAccess.make_dir_recursive_absolute(SessionIO.EXPORT_DIR)
-		var path := SessionIO.EXPORT_DIR.path_join("droneacharya-flight-%s.json" % String(selected["session_id"]).validate_filename())
+		DirAccess.make_dir_recursive_absolute(AppState.exports_dir)
+		var path := AppState.exports_dir.path_join("droneacharya-flight-%s.json" % String(selected["session_id"]).validate_filename())
 		var file := FileAccess.open(path, FileAccess.WRITE)
 		if file == null:
 			status_label.text = "Export failed: cannot write " + path
@@ -214,7 +214,7 @@ func export_all() -> Dictionary:
 
 
 func _export(records: Array, file_name: String) -> Dictionary:
-	var result := SessionIO.export_bundle(records, SessionIO.EXPORT_DIR.path_join(file_name))
+	var result := SessionIO.export_bundle(records, AppState.exports_dir.path_join(file_name))
 	status_label.text = "Exported %d session(s) to %s" % [result["count"], ProjectSettings.globalize_path(result["path"])] if result["ok"] else "Export failed: " + result["error"]
 	return result
 

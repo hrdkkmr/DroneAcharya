@@ -30,6 +30,8 @@ static var flight_mission := "basic_course"
 static var flight_profile := "recon"
 ## Where flight-mission records (droneacharya-flight-session) are saved.
 static var flight_sessions_dir := "user://flight_sessions"
+## Where the history screen writes exported files. Tests redirect this too.
+static var exports_dir := "user://exports"
 
 
 static func goto(tree: SceneTree, scene: String) -> void:

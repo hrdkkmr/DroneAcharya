@@ -126,6 +126,28 @@ func test_settings_persist_and_are_clamped() -> void:
 	SettingsStore.load_settings()
 
 
+## Regression: at startup the main menu applied the in-memory defaults before anything
+## had read settings.cfg, so a saved mute or volume was ignored on the menu.
+func test_saved_audio_settings_apply_when_the_app_starts() -> void:
+	var original := SettingsStore.path
+	SettingsStore.path = "user://test_runs/settings_startup.cfg"
+	var file := ConfigFile.new()
+	file.set_value("settings", "muted", true)
+	file.set_value("settings", "master_volume", 0.3)
+	assert_eq(file.save(SettingsStore.path), OK, "settings file written")
+	# The state of a freshly started program: defaults in memory, nothing read yet.
+	SettingsStore.values = SettingsStore.DEFAULTS.duplicate()
+	SettingsStore._loaded_from = ""
+	add_scene("res://scenes/main.tscn")
+	await tree.process_frame
+	var master := AudioServer.get_bus_index("Master")
+	assert_true(AudioServer.is_bus_mute(master), "saved mute applied on the main menu")
+	assert_near(db_to_linear(AudioServer.get_bus_volume_db(master)), 0.3, 0.001, "saved master volume applied on the main menu")
+	DirAccess.remove_absolute(SettingsStore.path)
+	SettingsStore.path = original
+	SettingsStore.load_settings()
+
+
 func test_settings_screen_changes_and_saves_values() -> void:
 	AppState.goto(tree, "settings")
 	var screen := await _wait_scene(AppState.SCENES["settings"])

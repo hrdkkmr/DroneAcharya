@@ -7,6 +7,7 @@ const ScenarioConfig := preload("res://scripts/sim/scenario_config.gd")
 const SessionRecord := preload("res://scripts/training/session_record.gd")
 const Rubric := preload("res://scripts/training/rubric.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
+const ThreatSession := preload("res://scripts/sim/threat_session.gd")
 
 
 func _wait_scene(path: String) -> Node:
@@ -235,6 +236,51 @@ func test_observation_radar_shows_tracker_output_only() -> void:
 	radar.contact_clicked.emit(confirmed[0]["id"])
 	await tree.process_frame
 	assert_eq(scene.selected_track, confirmed[0]["id"], "clicking a radar symbol selects the contact")
+
+
+## Regression: when the selected contact joined a swarm group, its Contacts-list row was
+## re-created and re-selected, which re-bound the card: a pending alarm confirmation
+## fell back to the response list with "continue observing" highlighted, so the next
+## right-click submitted a different response from the one being confirmed.
+func test_card_keeps_a_pending_decision_when_the_contact_joins_a_group() -> void:
+	var config: Dictionary = ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"]
+	# Same seed, same simulation: find a contact confirmed alone that joins a group later.
+	var pre := ThreatSession.new(config, null)
+	pre.start()
+	var alone_since := {}
+	var target := ""
+	var select_t := 0.0
+	while pre.status == ThreatSession.Status.RUNNING and target.is_empty():
+		pre.step()
+		for track in pre.tracker.confirmed_tracks():
+			if String(track["swarm_group"]).is_empty():
+				if not alone_since.has(track["id"]):
+					alone_since[track["id"]] = pre.time_s()
+			elif alone_since.has(track["id"]) and pre.time_s() - float(alone_since[track["id"]]) > 0.5:
+				target = track["id"]
+				select_t = float(alone_since[track["id"]]) + 0.2
+				break
+	assert_true(not target.is_empty(), "the scenario has a contact that joins a group after it is confirmed")
+	var scene := await _observe("res://scenarios/02_swarm_urban_day.json", select_t)
+	var session = scene.session
+	assert_true(String(session.tracker.tracks[target]["swarm_group"]).is_empty(), "%s not grouped yet" % target)
+	scene.select_track(target)
+	scene.hud.highlight["classify"] = Vocabulary.CATEGORIES.find("unidentified_uav")
+	scene.hud.confirm()
+	scene.hud._busy_until_ms = 0
+	scene.hud.highlight["respond"] = Vocabulary.RESPONSES.find("notify_supervisor")
+	assert_eq(scene.hud.confirm(), "confirm_needed", "alarm waiting for confirmation")
+	while session.status == ThreatSession.Status.RUNNING and String(session.tracker.tracks.get(target, {}).get("swarm_group", "")).is_empty():
+		session.step()
+	assert_true(not String(session.tracker.tracks.get(target, {}).get("swarm_group", "")).is_empty(), "%s joined a group" % target)
+	scene.hud._refresh_left = 0.0
+	scene.hud.refresh(session, scene.selected_track, scene.view_text(), 1.0)
+	await tree.process_frame
+	assert_eq([scene.hud.card_track, scene.hud.card_step, scene.hud.highlighted_response()], [target, "confirm", "notify_supervisor"],
+		"card still bound to the same contact with the same pending alarm")
+	scene.hud._busy_until_ms = 0
+	assert_eq(scene.hud.confirm(), "respond", "confirming submits")
+	assert_eq(session.trainee_state(target)["response"], "notify_supervisor", "the response that was being confirmed is recorded")
 
 
 func test_swarm_group_decision_applies_to_the_group_and_is_scored_once() -> void:

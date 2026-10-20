@@ -272,6 +272,7 @@ func test_exercise_to_review_to_3d_replay_and_back() -> void:
 	assert_true("Replay verified" in history.status_label.text, "verification reported")
 	var exported: Dictionary = history.export_selected()
 	assert_true(exported["ok"], "exported")
+	assert_true(String(exported["path"]).begins_with("user://test_runs/"), "tests export into the test folder, not the real exports folder: " + String(exported["path"]))
 	var imported: Dictionary = history.import_file(exported["path"])
 	assert_eq([imported["ok"], imported["skipped"]], [true, 1], "re-importing the same session is a harmless duplicate")
 	history.replay_in_3d()

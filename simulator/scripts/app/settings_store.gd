@@ -78,6 +78,8 @@ static func ensure_buses() -> void:
 
 
 static func apply() -> void:
+	# The main menu applies settings at startup, before anything has read the file.
+	_ensure_loaded()
 	ensure_buses()
 	_set_bus("Master", values["master_volume"], values["muted"])
 	_set_bus("SFX", values["sfx_volume"], false)

@@ -11,13 +11,26 @@ AI-enabled drone and counter-drone **training simulator** (prototype) for a desk
 
 Runs offline. No cloud services and no internet access are needed to play.
 
+## Requirements
+
+The Godot engine is **not** in this repository (the binaries are git-ignored). Before the first run:
+
+1. Download **Godot 4.7.2 stable, standard build, Windows 64-bit** (`Godot_v4.7.2-stable_win64.exe.zip`, *not* the .NET build) from the official Godot download archive (https://godotengine.org/download/archive/).
+2. Extract both files, `Godot_v4.7.2-stable_win64.exe` and `Godot_v4.7.2-stable_win64_console.exe`, into this folder (next to this README). They stay untracked.
+   If Godot is installed elsewhere, use its full path in place of `.\Godot_v4.7.2-stable_win64.exe` below.
+3. A graphics driver with Vulkan support (the project uses the Forward+ renderer).
+
+No import step, export templates, Python or internet connection is needed to play. Python 3 with `ml/requirements.txt` is only needed for the ML and schema tests.
+
 ## Quick start (Windows, PowerShell, from this folder)
 
 ```powershell
 .\Godot_v4.7.2-stable_win64.exe --path simulator                                                 # play
-.\Godot_v4.7.2-stable_win64_console.exe --headless --path simulator --script res://tests/run_tests.gd   # 167 tests
+.\Godot_v4.7.2-stable_win64_console.exe --headless --path simulator --script res://tests/run_tests.gd   # 170 tests
 python -m unittest discover -s ml/tests ; python -m unittest discover -s schemas                  # 11 + 4 tests
 ```
+
+Saved settings, reports and logs are in `%APPDATA%\DroneAcharya\`. For a live demonstration, see `docs/LIVE_DEMO_RUNBOOK.md`.
 
 ## Training modes
 
@@ -67,5 +80,7 @@ python -m unittest discover -s ml/tests ; python -m unittest discover -s schemas
 | Threat session format and VIGIL mapping | `DRONEACHARYA_SESSION_SCHEMA.md` |
 | ML pipeline, packaging | `DRONEACHARYA_TESTING.md` |
 | Baseline and restore | `DRONEACHARYA_BASELINE.md` |
+| Demo-readiness audit (bugs found, fixes, verification) | `DEMO_AUDIT.md` |
+| Live demo: launch, walkthrough, recovery, smoke test | `LIVE_DEMO_RUNBOOK.md` |
 
 `VIGIL/` is the original browser trainer, kept byte-for-byte unchanged (tag `baseline-vigil-2026-10-20`).

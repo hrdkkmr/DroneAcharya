@@ -116,6 +116,9 @@ var _slider_updating := false
 var _rows := {} ## track id or "group:Sxx" -> TreeItem
 var _refresh_left := 0.0
 var _busy_until_ms := 0
+## True while the Contacts list is selecting a row from code: that only mirrors the
+## current selection and must not re-bind (and so reset) the decision card.
+var _syncing_selection := false
 
 
 func _ready() -> void:
@@ -766,9 +769,14 @@ func _refresh_tracks(session: RefCounted, selected_id: String) -> void:
 			item.set_text(i, values[i])
 			item.set_custom_color(i, Color(1.0, 0.65, 0.2) if coasting else Color.WHITE)
 		if id == selected_id and not item.is_selected(0):
+			# The row was re-created (e.g. the contact joined a swarm group): keep the
+			# card's step and highlight, only refresh what it shows.
 			if item.get_parent() != root:
 				item.get_parent().collapsed = false
+			_syncing_selection = true
 			item.select(0)
+			_syncing_selection = false
+			_render_card()
 	for key in _rows.keys():
 		if not live.has(key):
 			var row: TreeItem = _rows[key]
@@ -865,11 +873,15 @@ func select_row(track_id: String) -> void:
 	if item:
 		if item.get_parent() != track_tree.get_root():
 			item.get_parent().collapsed = false
+		_syncing_selection = true
 		item.select(0)
+		_syncing_selection = false
 		track_tree.scroll_to_item(item)
 
 
 func _on_tree_selected() -> void:
+	if _syncing_selection:
+		return
 	var item := track_tree.get_selected()
 	if item == null:
 		return
