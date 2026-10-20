@@ -4,6 +4,10 @@ extends CharacterBody3D
 ## approximation, not an aerodynamic flight model.
 
 signal crashed(impact_speed: float, obstacle_name: String)
+## A touch below crash speed (counted for the report; at most one per obstacle contact).
+signal bumped(impact_speed: float, obstacle_name: String)
+
+const BUMP_SPEED := 1.0 ## m/s into an obstacle that counts as a minor collision
 
 @export_group("Speed limits")
 @export var max_horizontal_speed := 8.0 ## m/s
@@ -26,8 +30,11 @@ signal crashed(impact_speed: float, obstacle_name: String)
 ## When false (after a crash or mission end) pilot input is ignored and the drone
 ## brakes and descends until it rests on the ground.
 var controls_enabled := true
+## Id of the applied profile (see scripts/flight/drone_profiles.gd).
+var profile_id := "recon"
 
 var _rotor_spin := 0.0
+var _touching := {} ## obstacle name -> true while in contact (one bump per contact)
 
 @onready var _visual: Node3D = get_node_or_null("Visual")
 
@@ -82,10 +89,30 @@ func compute_velocity(current: Vector3, move: Vector3, yaw: float, current_altit
 	return Vector3(horizontal.x, vertical, horizontal.z)
 
 
+## Copies a drone profile's handling values onto this controller and resizes and
+## recolours the model. Collision size is unchanged so every profile fits the courses.
+func apply_profile(id: String, profile: Dictionary) -> void:
+	profile_id = id
+	for key in ["max_horizontal_speed", "max_ascent_speed", "max_descent_speed", "max_yaw_rate_degrees",
+			"horizontal_acceleration", "horizontal_braking", "vertical_acceleration", "crash_speed", "max_visual_tilt_degrees"]:
+		if profile.has(key):
+			set(key, float(profile[key]))
+	if _visual:
+		_visual.scale = Vector3.ONE * float(profile.get("visual_scale", 1.0))
+		var body := _visual.get_node_or_null("Body") as MeshInstance3D
+		if body and profile.has("body_color"):
+			var material := StandardMaterial3D.new()
+			material.albedo_color = profile["body_color"]
+			material.metallic = 0.3
+			material.roughness = 0.5
+			body.material_override = material
+
+
 func reset_to(spawn: Transform3D) -> void:
 	global_transform = spawn
 	velocity = Vector3.ZERO
 	controls_enabled = true
+	_touching.clear()
 	if _visual:
 		_visual.rotation = Vector3.ZERO
 	reset_physics_interpolation()
@@ -110,16 +137,21 @@ func heading_degrees() -> float:
 
 
 func _check_crash(impact_velocity: Vector3) -> void:
+	var touching := {}
 	for i in get_slide_collision_count():
 		var collision := get_slide_collision(i)
 		var obstacle := collision.get_collider() as Node
 		if obstacle == null or not obstacle.is_in_group("obstacle"):
 			continue
+		touching[obstacle.name] = true
 		var impact_speed := -impact_velocity.dot(collision.get_normal())
 		if impact_speed >= crash_speed and controls_enabled:
 			controls_enabled = false
 			crashed.emit(impact_speed, obstacle.name)
 			return
+		if impact_speed >= BUMP_SPEED and controls_enabled and not _touching.has(obstacle.name):
+			bumped.emit(impact_speed, obstacle.name)
+	_touching = touching
 
 
 ## Tilts the body toward the direction of travel and spins the rotors. Visual only.

@@ -1,6 +1,7 @@
 extends Node
 ## Connects the pure MissionState to the scene: drone, checkpoints and landing zone.
 ## If any of them is missing the mission stays inert instead of erroring every frame.
+## setup() can run again after the flight scene builds a different environment.
 
 const MissionState := preload("res://scripts/mission/mission_state.gd")
 
@@ -16,9 +17,20 @@ var state: MissionState = MissionState.new(0)
 var checkpoints: Array[Node] = []
 var drone: CharacterBody3D
 var landing_zone: Node3D
+var time_limit_s := 0.0
+var endurance_s := 0.0
 
 
 func _ready() -> void:
+	setup()
+
+
+## (Re)binds the drone, checkpoints and landing zone from the node paths.
+func setup() -> void:
+	for checkpoint in checkpoints:
+		if is_instance_valid(checkpoint) and checkpoint.drone_entered.is_connected(_on_checkpoint_entered):
+			checkpoint.drone_entered.disconnect(_on_checkpoint_entered)
+	checkpoints.clear()
 	drone = get_node_or_null(drone_path) as CharacterBody3D
 	landing_zone = get_node_or_null(landing_zone_path) as Node3D
 	var parent := get_node_or_null(checkpoints_path)
@@ -29,13 +41,23 @@ func _ready() -> void:
 	if not is_configured():
 		push_warning("Mission is missing its drone, checkpoints or landing zone; it will stay inactive.")
 		return
-	state = MissionState.new(checkpoints.size())
+	state = MissionState.new(checkpoints.size(), time_limit_s, endurance_s)
 	for i in checkpoints.size():
 		checkpoints[i].configure(i)
 		checkpoints[i].drone_entered.connect(_on_checkpoint_entered)
-	if drone.has_signal("crashed"):
+	if drone.has_signal("crashed") and not drone.crashed.is_connected(_on_drone_crashed):
 		drone.crashed.connect(_on_drone_crashed)
+	if drone.has_signal("bumped") and not drone.bumped.is_connected(_on_drone_bumped):
+		drone.bumped.connect(_on_drone_bumped)
 	_refresh_checkpoints()
+
+
+## Time limit and battery endurance in seconds (0 = none); takes effect immediately.
+func configure_limits(limit_s: float, endurance: float) -> void:
+	time_limit_s = maxf(limit_s, 0.0)
+	endurance_s = maxf(endurance, 0.0)
+	state.time_limit_s = time_limit_s
+	state.endurance_s = endurance_s
 
 
 func is_configured() -> bool:
@@ -71,8 +93,15 @@ func _physics_process(delta: float) -> void:
 			drone.controls_enabled = false
 	var on_ground := drone.is_on_floor()
 	var speed := drone.velocity.length()
-	_emit(state.update(drone.altitude(), on_ground, in_landing_zone(), speed, delta))
-	if state.status == MissionState.Status.COMPLETED:
+	_emit(state.update(drone.altitude(), on_ground, in_landing_zone(), speed, delta, drone.velocity.y))
+	if state.is_finished():
+		drone.controls_enabled = false
+
+
+## A simulated hit from the hazard layer (flight_threats.gd).
+func register_hit(source: String, damage: float) -> void:
+	_emit(state.record_hit(source, damage))
+	if state.is_finished():
 		drone.controls_enabled = false
 
 
@@ -84,6 +113,10 @@ func _on_checkpoint_entered(index: int) -> void:
 
 func _on_drone_crashed(impact_speed: float, obstacle_name: String) -> void:
 	_emit(state.fail("collided with %s at %.1f m/s" % [obstacle_name, impact_speed]))
+
+
+func _on_drone_bumped(impact_speed: float, obstacle_name: String) -> void:
+	_emit(state.record_bump(obstacle_name, impact_speed))
 
 
 func _refresh_checkpoints() -> void:

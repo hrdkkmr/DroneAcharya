@@ -27,7 +27,7 @@ func _initialize() -> void:
 	AppState.sessions_dir = "user://test_runs/capture_sessions"
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	await process_frame
-	for shot in ["menu", "settings", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause"]:
+	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause"]:
 		if only.is_empty() or shot in only:
 			await call(shot)
 	quit(0)
@@ -41,6 +41,11 @@ func menu() -> void:
 func settings() -> void:
 	await _goto("settings")
 	await _save("settings")
+
+
+func flight_briefing() -> void:
+	await _goto("flight_briefing")
+	await _save("flight_briefing")
 
 
 func flight_hud() -> void:

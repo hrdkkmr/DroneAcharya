@@ -138,3 +138,14 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
     - Observation HUD layout (Phase 3).
     - Flight HUD layout (Phase 2).
     - Tutorial entry is disabled until its scene exists (Phase 3).
+- **2026-10-20 — Phase 2a complete:**
+  - **Drone profiles:** `drone_profiles.gd` (Scout / Recon / Heavy utility; Recon = Stage 1 numbers) applied to the one controller and the chase camera.
+  - **Mission catalogue:** `flight_missions.gd` (`basic_course` = original course, 3:00 limit).
+  - **MissionState limits:** time limit with a 30 s warning, battery endurance (climb drains ×1.5, 20 % warning), integrity/hits, minor-collision count and an event log.
+  - **Flight HUD:** rebuilt as a mission card + clock with limit, alert banners (word + bar + "!"), and a telemetry strip with battery and integrity.
+  - **Flight briefing screen:** mission and profile choice remembered in settings; the clock starts at takeoff.
+  - **Flight records:** versioned `droneacharya-flight-session` v1, saved on finish; the result screen offers "Open report".
+  - **Test changes:**
+    - One existing test was updated: `test_main_menu_lists_all_modes_and_opens_flight_training` now passes through the flight briefing before flying (the menu flow changed by design; the assertion that a flight scene with a drone loads is kept).
+    - New `test_drone_profiles_and_missions.gd` (14 tests).
+  - **Result:** suite **129/129**, autopilot 23.9 s.

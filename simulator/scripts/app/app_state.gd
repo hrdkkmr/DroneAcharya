@@ -5,6 +5,7 @@ extends RefCounted
 const SCENES := {
 	"menu": "res://scenes/main.tscn",
 	"flight": "res://scenes/flight/flight_training.tscn",
+	"flight_briefing": "res://scenes/menu/flight_briefing.tscn",
 	"scenario_select": "res://scenes/menu/scenario_select.tscn",
 	"briefing": "res://scenes/menu/briefing.tscn",
 	"observation": "res://scenes/observation/observation.tscn",
@@ -23,6 +24,12 @@ static var replay_requested := false
 static var use_ml := true
 ## Where session records are saved and read. Tests redirect this to a scratch folder.
 static var sessions_dir := "user://sessions"
+## Flight training: mission and drone profile chosen on the flight briefing screen
+## (ids from scripts/flight/flight_missions.gd and drone_profiles.gd).
+static var flight_mission := "basic_course"
+static var flight_profile := "recon"
+## Where flight-mission records (droneacharya-flight-session) are saved.
+static var flight_sessions_dir := "user://flight_sessions"
 
 
 static func goto(tree: SceneTree, scene: String) -> void:

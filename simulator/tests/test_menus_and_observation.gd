@@ -29,6 +29,10 @@ func test_main_menu_lists_all_modes_and_opens_flight_training() -> void:
 		assert_true(menu.buttons.has(key), "menu has an entry for " + key)
 	assert_true(not menu.buttons["flight"].disabled, "flight training enabled")
 	menu.buttons["flight"].pressed.emit()
+	# Flight training now opens its briefing (mission and drone choice) first.
+	var briefing := await _wait_scene(AppState.SCENES["flight_briefing"])
+	assert_true(briefing != null, "flight briefing shown before flying")
+	briefing.start_mission()
 	var flight := await _wait_scene(AppState.SCENES["flight"])
 	assert_true(flight != null and flight.get_node_or_null("Drone") != null, "flight scene with drone loaded")
 

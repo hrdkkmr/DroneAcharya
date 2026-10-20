@@ -43,6 +43,7 @@ func _initialize() -> void:
 	print("Running tests in %s" % dir_path)
 	# Tests never write into the real training history.
 	load("res://scripts/app/app_state.gd").sessions_dir = "user://test_runs/sessions"
+	load("res://scripts/app/app_state.gd").flight_sessions_dir = "user://test_runs/flight_sessions"
 	# ...nor into the real settings file.
 	var settings_store = load("res://scripts/app/settings_store.gd")
 	settings_store.path = "user://test_runs/settings.cfg"

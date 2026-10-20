@@ -11,7 +11,7 @@ const SettingsStore := preload("res://scripts/app/settings_store.gd")
 ## Main entries: [scene key, title, description]. A scene whose file does not exist
 ## is shown disabled rather than leading to an empty screen.
 const ENTRIES := [
-	["flight", "Flight Training", "Fly a training drone through course, city or village missions. Choose a drone profile and reach the landing zone in time."],
+	["flight_briefing", "Flight Training", "Fly a training drone through course, city or village missions. Choose a drone profile and reach the landing zone in time."],
 	["briefing", "Threat Detection Training", "Watch the synthetic sensors, inspect contacts, classify them and choose a procedural response."],
 	["history", "Training History & Reports", "Plain-language reports of past missions and exercises, replay, export and import."],
 	["settings", "Settings", "Volume, mouse sensitivity, effects quality and decision-model information."],
@@ -81,8 +81,8 @@ func _ready() -> void:
 	quit.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	buttons["quit"] = quit
 	column.add_child(quit)
-	if buttons["flight"].is_inside_tree():
-		buttons["flight"].grab_focus.call_deferred()
+	buttons["flight"] = buttons["flight_briefing"]
+	buttons["flight"].grab_focus.call_deferred()
 
 
 ## A large two-line button: mode name and one sentence about it.
