@@ -48,7 +48,7 @@ $win = "build\windows\$name"
 if (Test-Path $win) { Remove-Item $win -Recurse -Force }
 New-Item -ItemType Directory -Force $win | Out-Null
 Export-Preset "Windows Desktop" "../$win/DroneAcharya.exe"
-(Get-Content deploy\windows\README.txt -Raw).Replace("{VERSION}", $Version).Replace("{COMMIT}", $commit) |
+(Get-Content deploy\windows\README.txt -Raw -Encoding UTF8).Replace("{VERSION}", $Version).Replace("{COMMIT}", $commit) |
     Set-Content -Encoding utf8 "$win\README.txt"
 Copy-Item deploy\licenses\GODOT_LICENSE.txt $win
 $winZip = "build\release\$name.zip"
