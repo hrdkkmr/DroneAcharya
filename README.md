@@ -11,7 +11,30 @@ AI-enabled drone and counter-drone **training simulator** (prototype) for a desk
 
 Runs offline. No cloud services and no internet access are needed to play.
 
-## Requirements
+## Download and Run
+
+For evaluators: a ready-made Windows build. Nothing else needs to be installed (no Godot, Python or internet connection).
+
+**Download:** `<GOOGLE_DRIVE_LINK>` (file `DroneAcharya-<version>-win64.zip`, about 37 MB)
+
+1. Download the ZIP. In Google Drive, use **Download** and, if asked, **Download anyway** (Drive cannot virus-scan files of this size).
+2. Right-click the ZIP → **Extract All…** → **Extract**. Do not run the program from inside the ZIP.
+3. Open the extracted folder `DroneAcharya-<version>-win64` and double-click **DroneAcharya.exe**.
+4. If Windows SmartScreen says "Windows protected your PC", click **More info** → **Run anyway**. The program is not code-signed.
+
+**System requirements**
+
+- Windows 10 or 11, 64-bit.
+- A graphics card or integrated GPU with a current Vulkan driver (tested). If Vulkan is unavailable, the engine is designed to fall back to Direct3D 12 or OpenGL 3.3. These fallbacks are untested.
+- About 120 MB of disk space.
+- A keyboard and mouse. The window is 1600×900 by default; 1366×768 is supported.
+- Tested on one PC only: Windows 11 Home (64-bit), Intel Core Ultra 5 125H, Intel Arc integrated graphics (Vulkan), 16 GB RAM. Other hardware has not been tested.
+
+Settings, reports and logs are saved in `%APPDATA%\DroneAcharya\`. The `README.txt` in the ZIP has the controls, troubleshooting and known limitations.
+
+Maintainers: build the ZIP with `.\deploy\build-release.ps1 -Target Windows` (see `deploy/WINDOWS_RELEASE.md`).
+
+## Requirements (running from source)
 
 The Godot engine is **not** in this repository (the binaries are git-ignored). Before the first run:
 
