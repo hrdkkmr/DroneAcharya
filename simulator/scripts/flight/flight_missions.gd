@@ -4,7 +4,9 @@ extends RefCounted
 ## "village" are built procedurally from `route` by scripts/world/*.
 ## Route points are in metres (+X east, +Y up, -Z north). Checkpoints are rings the
 ## drone flies through in order; `landing` is the landing-zone centre on the ground.
-## `hostile` enables the synthetic hazard layer (scripts/flight/flight_threats.gd).
+## `traffic` adds friendly and unknown drones (radar practice); `hostile` adds the
+## synthetic hazard layer (scripts/flight/flight_traffic.gd): emplacement `sites`
+## (briefed threat areas) and a hostile drone patrolling near `hostile_patrol`.
 
 const DEFAULT := "basic_course"
 const ORDER := ["basic_course", "city_delivery", "village_supply", "city_hostile", "village_hostile"]
@@ -62,6 +64,8 @@ const MISSIONS := {
 		"traffic": true,
 		"hazards": "As City delivery, plus fictional ground emplacements that launch slow simulated projectiles and a hostile drone that follows you when near.",
 		"route": CITY_ROUTE,
+		"sites": [Vector3(-10, 0, -105), Vector3(-90, 0, -192), Vector3(72, 0, -112)],
+		"hostile_patrol": Vector3(-10, 34, -190),
 	},
 	"village_hostile": {
 		"title": "Village transit — hostile area",
@@ -73,6 +77,8 @@ const MISSIONS := {
 		"traffic": true,
 		"hazards": "As Village supply run, plus fictional ground emplacements that launch slow simulated projectiles and a hostile drone that follows you when near.",
 		"route": VILLAGE_ROUTE,
+		"sites": [Vector3(-85, 0, -55), Vector3(75, 0, -150), Vector3(45, 0, -255)],
+		"hostile_patrol": Vector3(20, 30, -125),
 	},
 }
 

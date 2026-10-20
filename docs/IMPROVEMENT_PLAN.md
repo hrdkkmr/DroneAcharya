@@ -165,3 +165,22 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
     - a shape-cast along every route segment;
     - autopilot completes city in 68.3 s and village in 63.2 s.
   - **Result:** suite **134/134**.
+- **2026-10-20 — Phase 2c complete:**
+  - **`flight_traffic.gd` (pure, seeded truth):**
+    - friendly patrol drones (ID reply);
+    - unknown transits;
+    - in hostile missions, fictional emplacement sites that launch straight-line projectiles at the drone's position at launch (22 m/s, 120 m range, 6–9 s cooldown, line of sight required);
+    - a hostile drone that follows at 4.5 m/s when within 90 m and gives up after 25 s;
+    - hits deal 35 % integrity.
+  - **`flight_sensor.gd`:**
+    - range-limited;
+    - Pd 0.97→0.6;
+    - seeded noise;
+    - stale after 1.6 s, dropped after 4 s;
+    - cue-based classification;
+    - the incoming warning computed from sensor contacts.
+  - **`radar_display.gd`:** heading-up scope, shape + letter per kind, legend, rim-pinned destination, briefed threat areas.
+  - **HUD:** radar, INCOMING banner + edge arrow, hit flash.
+  - **Flight record:** threat summary added.
+  - **Balance probe (autopilot, no evasion, not committed as a test):** all 6 hostile mission/profile combinations complete; Heavy takes 2 hits in the village. The hostile drone speed was lowered from 5.0 to 4.5 m/s after Heavy failed at 5.0.
+  - **Tests:** new `test_flight_radar_and_threats.gd` (9 tests). Suite **143/143**.

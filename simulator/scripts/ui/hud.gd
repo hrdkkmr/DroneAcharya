@@ -9,6 +9,25 @@ extends CanvasLayer
 
 const PauseMenu := preload("res://scripts/ui/pause_menu.gd")
 const UiKit := preload("res://scripts/ui/ui_kit.gd")
+const RadarDisplay := preload("res://scripts/ui/radar_display.gd")
+
+
+## Screen-edge arrow pointing toward the nearest incoming simulated projectile.
+class IncomingArrow extends Control:
+	var direction := Vector2.ZERO ## screen direction (x right, y down); zero = hidden
+
+	func _process(_delta: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		if direction == Vector2.ZERO:
+			return
+		var centre := size * 0.5
+		var reach := minf(size.x, size.y) * 0.42
+		var tip := centre + direction * reach
+		var side := Vector2(-direction.y, direction.x)
+		var color := Color(1.0, 0.45, 0.2, 0.9)
+		draw_colored_polygon(PackedVector2Array([tip, tip - direction * 34.0 + side * 18.0, tip - direction * 22.0, tip - direction * 34.0 - side * 18.0]), color)
 const COMPASS_POINTS := ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 
 var altitude_value: Label
@@ -27,6 +46,9 @@ var message_label: Label
 var alerts_box: VBoxContainer
 var alerts := {} ## id -> PanelContainer
 var root: Control
+var radar: RadarDisplay
+var incoming_arrow: IncomingArrow
+var hit_flash: ColorRect
 var overlay: PauseMenu
 var overlay_title: Label
 var overlay_detail: Label
@@ -46,9 +68,11 @@ func _ready() -> void:
 	alerts_box = UiKit.vbox(6)
 	alerts_box.name = "Alerts"
 	alerts_box.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	alerts_box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	alerts_box.offset_left = -360
 	alerts_box.offset_right = -16
 	alerts_box.offset_top = 16
+	alerts_box.alignment = BoxContainer.ALIGNMENT_BEGIN
 	alerts_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(alerts_box)
 	message_label = UiKit.label("", 24)
@@ -61,6 +85,17 @@ func _ready() -> void:
 	message_label.offset_bottom = 210
 	message_label.visible = false
 	root.add_child(message_label)
+	incoming_arrow = IncomingArrow.new()
+	incoming_arrow.name = "IncomingArrow"
+	incoming_arrow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	incoming_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(incoming_arrow)
+	hit_flash = ColorRect.new()
+	hit_flash.name = "HitFlash"
+	hit_flash.color = Color(1.0, 0.2, 0.1, 0.0)
+	hit_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hit_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hit_flash)
 	overlay = PauseMenu.new()
 	overlay.name = "PauseMenu"
 	add_child(overlay)
@@ -112,6 +147,33 @@ func _build_telemetry() -> void:
 	battery_value = _value(grid)
 	integrity_value = _value(grid)
 	view_value = _value(grid)
+
+
+## Adds the radar scope in the bottom-right corner (flight scene calls this when the
+## mission has traffic or threats).
+func add_radar(range_m: float) -> RadarDisplay:
+	radar = RadarDisplay.new()
+	radar.name = "Radar"
+	radar.range_m = range_m
+	radar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	radar.offset_left = -radar.scope_size - 16
+	radar.offset_top = -radar.scope_size - 16 - 28
+	radar.offset_right = -16
+	radar.offset_bottom = -16
+	root.add_child(radar)
+	return radar
+
+
+## Incoming simulated projectile: banner with direction and time, plus an edge arrow.
+## `warning` is {} when nothing is incoming. `screen_direction` is in screen space.
+func show_incoming(warning: Dictionary, screen_direction: Vector2, side_text: String) -> void:
+	var active := not warning.is_empty()
+	set_alert("incoming", active, "INCOMING", "%s · %.1f s · keep moving" % [side_text, float(warning.get("eta", 0.0))], UiKit.BAD)
+	incoming_arrow.direction = screen_direction.normalized() if active else Vector2.ZERO
+
+
+func flash_hit() -> void:
+	hit_flash.color.a = 0.45
 
 
 func _value(parent: Control) -> Label:
@@ -226,6 +288,8 @@ func hide_overlay() -> void:
 
 
 func _process(delta: float) -> void:
+	if hit_flash and hit_flash.color.a > 0.0:
+		hit_flash.color.a = maxf(hit_flash.color.a - delta * 0.9, 0.0)
 	if _message_time_left > 0.0:
 		_message_time_left -= delta
 		if _message_time_left <= 0.0:

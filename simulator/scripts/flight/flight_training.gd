@@ -13,6 +13,9 @@ const DroneProfiles := preload("res://scripts/flight/drone_profiles.gd")
 const FlightMissions := preload("res://scripts/flight/flight_missions.gd")
 const FlightRecord := preload("res://scripts/flight/flight_record.gd")
 const FlightWorld := preload("res://scripts/world/flight_world.gd")
+const FlightTraffic := preload("res://scripts/flight/flight_traffic.gd")
+const FlightSensor := preload("res://scripts/flight/flight_sensor.gd")
+const TrafficVisuals := preload("res://scripts/flight/traffic_visuals.gd")
 const PAUSE_ACTIONS := [["resume", "Resume"], ["restart", "Restart mission"], ["controls", "Controls"], ["settings", "Settings"], ["menu", "Back to menu"]]
 const RESULT_ACTIONS := [["restart", "Fly again"], ["report", "Open report"], ["menu", "Back to menu"]]
 
@@ -21,6 +24,12 @@ var mission_def: Dictionary = {}
 var profile_id := DroneProfiles.DEFAULT
 var record: Dictionary = {} ## the saved record of the last finished mission
 var saved_path := ""
+## Other traffic and synthetic hazards (null when the mission has none).
+var traffic: FlightTraffic = null
+var sensor: FlightSensor = null
+var traffic_visuals: Node3D = null
+var threat_stats := {}
+var incoming_warning: Dictionary = {}
 
 var _finished_shown := false
 
@@ -47,6 +56,7 @@ func _ready() -> void:
 	apply_profile()
 	mission.configure_limits(float(mission_def["time_limit_s"]), float(DroneProfiles.get_profile(profile_id)["endurance_s"]))
 	mission.message.connect(hud.show_message)
+	_setup_traffic()
 	hud.overlay.action_pressed.connect(_on_menu_action)
 	hud.set_mission_title("%s · %s" % [mission_def["title"], DroneProfiles.get_profile(profile_id)["title"]])
 	hud.hide_overlay()
@@ -89,6 +99,94 @@ func apply_profile() -> void:
 	if camera_rig:
 		for key in DroneProfiles.CAMERA_KEYS:
 			camera_rig.set(key, float(profile[key]))
+
+
+## (Re)creates the traffic simulation and sensor from the mission seed, so a restart
+## replays the same traffic for the same flying.
+func _setup_traffic() -> void:
+	if not (mission_def.get("traffic", false) or mission_def.get("hostile", false)):
+		return
+	var seed := int(mission_def.get("seed", 1))
+	traffic = FlightTraffic.new(mission_def, mission.training_area, seed + 17)
+	traffic.blocker = _blocked
+	sensor = FlightSensor.new(seed + 29)
+	threat_stats = {"projectiles_launched": 0, "incoming_warnings": 0, "projectile_hits": 0, "hostile_drone_hits": 0}
+	incoming_warning = {}
+	if traffic_visuals:
+		traffic_visuals.free()
+	traffic_visuals = TrafficVisuals.new()
+	traffic_visuals.name = "Traffic"
+	traffic_visuals.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(traffic_visuals)
+	traffic_visuals.add_sites(traffic.sites)
+	if hud.radar == null:
+		hud.add_radar(float(sensor.config["range_m"]))
+	hud.radar.contacts = []
+	if hud.has_method("show_incoming"):
+		hud.show_incoming({}, Vector2.ZERO, "")
+
+
+## Line-of-sight test for the hazard layer: true when a structure is in the way.
+func _blocked(from: Vector3, to: Vector3) -> bool:
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	query.exclude = [drone.get_rid()]
+	return not get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+
+func _physics_process(delta: float) -> void:
+	if traffic == null or get_tree().paused or mission.state.is_finished():
+		return
+	var own := drone.global_position + Vector3.UP * 0.2
+	traffic.step(delta, own)
+	for event in traffic.take_events():
+		match event["type"]:
+			"launched":
+				threat_stats["projectiles_launched"] += 1
+			"hit":
+				var by_drone: bool = event["data"]["kind"] == "hostile_drone"
+				threat_stats["hostile_drone_hits" if by_drone else "projectile_hits"] += 1
+				mission.register_hit("the hostile drone" if by_drone else "a simulated projectile", float(traffic.config["damage"]))
+				hud.flash_hit()
+	sensor.step(delta, own, traffic.active_entities())
+	var warnings := sensor.incoming(own, drone.velocity)
+	var warning: Dictionary = warnings[0] if not warnings.is_empty() else {}
+	if not warning.is_empty() and incoming_warning.is_empty():
+		threat_stats["incoming_warnings"] += 1
+		mission.state.log_event("incoming_warning", {"eta_s": snappedf(warning["eta"], 0.1)})
+	incoming_warning = warning
+	traffic_visuals.sync(traffic.active_entities())
+
+
+## Radar picture and incoming warning for the HUD (sensor output only).
+func _update_radar() -> void:
+	if sensor == null or hud.radar == null:
+		return
+	var radar = hud.radar
+	radar.own_position = drone.global_position
+	radar.own_yaw = drone.rotation.y
+	radar.contacts = sensor.contact_list()
+	var marks: Array = [{"kind": "destination", "position": mission.landing_zone.global_position, "label": "LZ"}]
+	var next: int = mission.state.next_checkpoint
+	if next < mission.checkpoints.size():
+		marks.append({"kind": "waypoint", "position": mission.checkpoints[next].global_position, "label": str(next + 1)})
+	for site in traffic.sites:
+		marks.append({"kind": "threat_area", "position": site, "radius": float(traffic.config["site_range_m"])})
+	radar.marks = marks
+	radar.status_text = "%d contact%s" % [radar.contacts.size(), "" if radar.contacts.size() == 1 else "s"]
+	if incoming_warning.is_empty():
+		hud.show_incoming({}, Vector2.ZERO, "")
+		return
+	var from: Vector3 = incoming_warning["from"]
+	var screen := Vector2(from.x, from.z).rotated(drone.rotation.y)
+	var angle := rad_to_deg(screen.angle_to(Vector2(0, -1)))
+	var side := "ahead"
+	if absf(angle) > 135.0:
+		side = "behind"
+	elif angle > 45.0:
+		side = "left"
+	elif angle < -45.0:
+		side = "right"
+	hud.show_incoming(incoming_warning, screen, "from " + side)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -151,6 +249,7 @@ func reset_mission() -> void:
 	_finished_shown = false
 	record = {}
 	saved_path = ""
+	_setup_traffic()
 	if hud:
 		hud.hide_overlay()
 		hud.show_message("Mission restarted. Hold Space to take off.")
@@ -167,6 +266,7 @@ func _process(_delta: float) -> void:
 	if get_tree().paused:
 		status = "Paused"
 	hud.show_mission(mission.objective_text(), status)
+	_update_radar()
 	if state.is_finished() and not _finished_shown:
 		_finished_shown = true
 		_finish()
@@ -177,7 +277,13 @@ func _finish() -> void:
 	var state: MissionState = mission.state
 	var created := Time.get_datetime_string_from_system(true) + "Z"
 	var session_id := "flight-%s-%d-%d" % [mission_def["id"], Time.get_unix_time_from_system(), Time.get_ticks_msec() % 1000]
-	record = FlightRecord.build(state, mission_def, profile_id, DroneProfiles.get_profile(profile_id), session_id, created)
+	var extra := {}
+	if traffic != null:
+		extra["threats"] = threat_stats.duplicate()
+		extra["radar_contacts_seen"] = sensor.contacts_seen()
+	record = FlightRecord.build(state, mission_def, profile_id, DroneProfiles.get_profile(profile_id), session_id, created, extra)
+	if traffic != null:
+		hud.show_incoming({}, Vector2.ZERO, "")
 	var saved := FlightRecord.save(record, AppState.flight_sessions_dir)
 	saved_path = saved.get("path", "")
 	var lines := PackedStringArray()

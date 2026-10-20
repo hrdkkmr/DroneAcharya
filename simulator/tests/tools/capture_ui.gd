@@ -27,7 +27,7 @@ func _initialize() -> void:
 	AppState.sessions_dir = "user://test_runs/capture_sessions"
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	await process_frame
-	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village"]:
+	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village", "hostile"]:
 		if only.is_empty() or shot in only:
 			await call(shot)
 	quit(0)
@@ -117,6 +117,21 @@ func _environment(mission: String, shot: String, start: Vector3, overview_from: 
 	camera.look_at_from_position(overview_from, overview_to)
 	camera.make_current()
 	await _save(shot + "_overview")
+	AppState.flight_mission = "basic_course"
+
+
+## Hostile village mission: hover near an emplacement until the incoming warning shows.
+func hostile() -> void:
+	AppState.flight_mission = "village_hostile"
+	var scene := await _goto("flight")
+	scene.mission.state.status = 1
+	for i in 60 * 30:
+		scene.drone.global_position = Vector3(-60, 14, -42)
+		scene.drone.velocity = Vector3.ZERO
+		await physics_frame
+		if scene.hud.has_alert("incoming") and scene.incoming_warning.get("eta", 9.0) < 2.5:
+			break
+	await _save("hostile_incoming")
 	AppState.flight_mission = "basic_course"
 
 
