@@ -27,7 +27,7 @@ func _initialize() -> void:
 	AppState.sessions_dir = "user://test_runs/capture_sessions"
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	await process_frame
-	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village", "hostile", "tutorial", "threat_briefing", "observation_alarm"]:
+	for shot in ["menu", "settings", "flight_briefing", "flight_hud", "flight_pause", "flight_controls", "observation", "observation_pause", "city", "village", "hostile", "tutorial", "threat_briefing", "observation_alarm", "report_threat"]:
 		if only.is_empty() or shot in only:
 			await call(shot)
 	quit(0)
@@ -170,6 +170,36 @@ func observation_alarm() -> void:
 	for i in 20:
 		await process_frame
 	await _save("observation_alarm")
+
+
+## Plays a scripted swarm exercise (acknowledge late, classify with the rule-based
+## aid's call) into a scratch history folder and shows its report.
+func report_threat() -> void:
+	var ThreatSession = load("res://scripts/sim/threat_session.gd")
+	var SessionRecord = load("res://scripts/training/session_record.gd")
+	var Rubric = load("res://scripts/training/rubric.gd")
+	var SessionIO = load("res://scripts/training/session_io.gd")
+	DirAccess.make_dir_recursive_absolute(AppState.sessions_dir)
+	for name in DirAccess.get_files_at(AppState.sessions_dir):
+		DirAccess.remove_absolute(AppState.sessions_dir.path_join(name))
+	var session = ThreatSession.new(ScenarioConfig.load_file("res://scenarios/03_mixed_rural_night_degraded.json")["config"], null)
+	session.start()
+	while not session.is_finished():
+		session.step()
+		if session.tick() % 20 != 0 or session.time_s() < 25.0:
+			continue
+		for track in session.tracker.confirmed_tracks():
+			var advice: Dictionary = session.decisions.recommendation_for(track["id"])
+			if advice.is_empty() or not session.trainee_state(track["id"]).is_empty():
+				continue
+			session.classify(track["id"], advice["rules"]["category"], 80, true)
+			session.respond(track["id"], advice["policy"]["response"])
+	var record: Dictionary = SessionRecord.build(session, "capture-report", "2026-10-20T12:00:00Z")
+	record["evaluation"] = Rubric.evaluate(record)
+	SessionIO.save(record, AppState.sessions_dir)
+	AppState.review_session = record
+	await _goto("history")
+	await _save("report_threat")
 
 
 func _goto(scene: String) -> Node:

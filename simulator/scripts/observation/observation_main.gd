@@ -18,6 +18,7 @@ const SessionRecord := preload("res://scripts/training/session_record.gd")
 const SessionIO := preload("res://scripts/training/session_io.gd")
 const Replay := preload("res://scripts/training/replay.gd")
 const Rubric := preload("res://scripts/training/rubric.gd")
+const ReportBuilder := preload("res://scripts/training/report_builder.gd")
 const MlClassifier := preload("res://scripts/ai/ml_classifier.gd")
 const Vocabulary := preload("res://scripts/ai/vocabulary.gd")
 const TutorialPanel := preload("res://scripts/menu/tutorial_panel.gd")
@@ -243,14 +244,18 @@ func finish_and_score() -> void:
 	record["evaluation"] = evaluation
 	var saved := SessionIO.save(record, AppState.sessions_dir)
 	saved_path = saved.get("path", "")
-	var c: Dictionary = evaluation["components"]
-	var degraded_text: String = "%.0f" % c["degraded"]["score"] if c["degraded"]["n"] > 0 else "n/a"
-	var detail := "Score %.1f / 100 (%.1f weighted − %.1f penalties)%s\nDetection %.0f · Classification %.0f · Evidence %.0f · Response %.0f · Timing %.0f · Degraded %s\n%s" % [
-		evaluation["score"], evaluation["weighted_score"], evaluation["penalty_points"],
-		"" if evaluation["comparable"] else " · not comparable",
-		c["detection"]["score"], c["classification"]["score"], c["evidence"]["score"], c["response"]["score"], c["response_time"]["score"],
-		degraded_text, "Saved to training history." if saved["ok"] else "Not saved: " + saved["error"]]
-	hud.show_overlay("Exercise ended" if session.status == ThreatSession.Status.COMPLETED else "Exercise aborted", detail)
+	# Short, data-backed summary; the full report is one click away.
+	var report := ReportBuilder.build(record)
+	var lines := PackedStringArray(["Score %.1f / 100%s" % [evaluation["score"], "" if evaluation["comparable"] else " (not comparable)"]])
+	for row in report["result"]:
+		if row[0] == "Contacts":
+			lines.append(row[1])
+	if not report["went_well"].is_empty():
+		lines.append("✓ " + report["went_well"][0])
+	if not report["improve"].is_empty():
+		lines.append("✗ " + report["improve"][0])
+	lines.append("Saved to training history." if saved["ok"] else "Not saved: " + saved["error"])
+	hud.show_overlay("Exercise ended" if session.status == ThreatSession.Status.COMPLETED else "Exercise aborted", "\n".join(lines))
 	hud.set_review_available(saved["ok"])
 
 

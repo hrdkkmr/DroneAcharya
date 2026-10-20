@@ -265,7 +265,9 @@ func test_exercise_to_review_to_3d_replay_and_back() -> void:
 	var history := await _wait_scene(AppState.SCENES["history"])
 	assert_eq(history.sessions.size(), 1, "one session in history")
 	assert_eq(history.selected["session_id"], session_id, "the finished session is selected")
-	assert_true("/ 100" in history.report_label.text and "Decision timeline" in history.report_label.text, "review shown")
+	# The plain-language report comes first; the full rubric output is under Details.
+	assert_true("/ 100" in history.report_label.text and "What went well" in history.report_label.text, "report shown")
+	assert_true("Decision timeline" in history.details_label.text, "rubric details available")
 	assert_true(history.verify_replay()["identical"], "replay verified from the saved file")
 	assert_true("Replay verified" in history.status_label.text, "verification reported")
 	var exported: Dictionary = history.export_selected()

@@ -206,3 +206,20 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
   - **Group scope:** `ThreatSession.decision_scope()` tells the card whether a decision covers one contact or the whole group.
   - **Test change:** `test_threat_observation_uses_default_scenario_when_none_selected` now marks the tutorial as already seen, because a first visit now opens the tutorial.
   - **Tests:** new `test_decision_workflow_and_tutorial.gd` (10 tests). Suite **153/153**.
+- **2026-10-20 — Phase 4 complete:**
+  - **`report_builder.gd`** builds a plain-language report from threat (`droneacharya-session` v1) and flight (`droneacharya-flight-session` v1) records. Sections:
+    1. result;
+    2. ≤3 strengths;
+    3. ≤3 improvements;
+    4. a decision timeline with assessment and reason;
+    5. 1–3 next steps;
+    6. plain score categories.
+  - **Data only:** every statement is computed from the record and left out when unsupported. The threat summary separates correct, incorrect, unknown, unresolved, missed, unnecessary alerts and delayed decisions.
+  - **Details:** the full rubric output (`aar.gd`) is kept under "Details".
+  - **Versions:** an unknown version gives a notice, not a guess.
+  - **History screen:** lists flight and threat records together; the flight result screen's "Open report" selects the new record.
+  - **End-of-exercise overlay:** shows the score, the contact summary and the first strength and improvement.
+  - **Test changes:**
+    - `test_exercise_to_review_to_3d_replay_and_back` now finds "Decision timeline" under Details, and the plain report must contain "What went well".
+    - New `test_reports.gd` (7 tests), including banned-phrase and reload-from-disk checks.
+  - **Result:** suite **160/160**.
