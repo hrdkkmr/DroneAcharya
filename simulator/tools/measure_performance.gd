@@ -52,6 +52,8 @@ func _initialize() -> void:
 	report["typical_simulation"] = _measure_ticks(ScenarioConfig.load_file("res://scenarios/03_mixed_rural_night_degraded.json")["config"], 180.0)
 	report["stress_render"] = await _measure_render(stress_config(), 20.0)
 	report["typical_render"] = await _measure_render(ScenarioConfig.load_file("res://scenarios/02_swarm_urban_day.json")["config"], 20.0)
+	for mission in ["basic_course", "city_delivery", "village_supply", "city_hostile", "village_hostile"]:
+		report["flight_" + mission] = await _measure_flight(mission, 10.0)
 	var file := FileAccess.open(out, FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, " "))
 	file.close()
@@ -122,6 +124,42 @@ func _measure_render(config: Dictionary, seconds: float) -> Dictionary:
 		result[view] = {"frames": frame_ms.size(), "fps_mean": snappedf(1000.0 / mean, 0.1),
 			"fps_1pct_low": snappedf(1000.0 / frame_ms[int(frame_ms.size() * 0.99)], 0.1),
 			"active_actors": scene.session.world.active_ids().size(), "tracks": scene.session.tracker.tracks.size()}
+	return result
+
+
+## Loads a flight mission (environment build time), then flies forward along the
+## first leg with the chase camera and samples the frame rate.
+func _measure_flight(mission: String, seconds: float) -> Dictionary:
+	AppState.flight_mission = mission
+	var started := Time.get_ticks_usec()
+	AppState.goto(self, "flight")
+	await process_frame
+	await process_frame
+	var load_ms := (Time.get_ticks_usec() - started) / 1000.0
+	var scene: Node = current_scene
+	Input.action_press("ascend")
+	for i in 90:
+		await physics_frame
+	Input.action_release("ascend")
+	Input.action_press("move_forward")
+	var frame_ms := []
+	var t0 := Time.get_ticks_msec()
+	var last := Time.get_ticks_usec()
+	while Time.get_ticks_msec() - t0 < seconds * 1000.0:
+		await process_frame
+		var now := Time.get_ticks_usec()
+		frame_ms.append((now - last) / 1000.0)
+		last = now
+	Input.action_release("move_forward")
+	frame_ms = frame_ms.slice(30)
+	frame_ms.sort()
+	var mean := _mean(frame_ms)
+	var result := {"scene_load_ms": snappedf(load_ms, 0.1), "fps_mean": snappedf(1000.0 / mean, 0.1),
+		"fps_1pct_low": snappedf(1000.0 / frame_ms[int(frame_ms.size() * 0.99)], 0.1),
+		"draw_calls": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+		"objects": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
+		"static_memory_mb": snappedf(OS.get_static_memory_usage() / 1048576.0, 0.1)}
+	AppState.flight_mission = "basic_course"
 	return result
 
 

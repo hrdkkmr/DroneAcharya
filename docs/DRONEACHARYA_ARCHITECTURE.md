@@ -1,5 +1,7 @@
 # DroneAcharya — Architecture (as implemented)
 
+> **Note (2026-10-20 overhaul):** `ARCHITECTURE.md` describes the current simulator, including flight missions, environments, radar, the new observation interface, reports and sound. This file remains the detailed reference for the threat-observation core.
+
 Status: describes the code at the Phase 6 commit. The Phase 1 *proposal* that this file used to contain is preserved in Git history (commit `24b37d1`); where the implementation differs, this document is authoritative.
 
 DroneAcharya is a **synthetic training prototype**: an AI-enabled drone and counter-drone threat-recognition trainer built as a Godot 4.7.2 desktop simulator. It is **not** an operational system.

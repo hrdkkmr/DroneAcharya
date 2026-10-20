@@ -1,5 +1,7 @@
 # DroneAcharya — Installation, Launch and Testing
 
+> **Note (2026-10-20 overhaul):** current test counts, results, performance and manual checks are in `TESTING.md`. This file remains the reference for installation, the ML pipeline and packaging.
+
 All commands run in PowerShell from `E:\Hardik\Programming\DroneAcharya`. Every result below was produced on this machine:
 
 - **CPU:** Intel Core Ultra 5 125H

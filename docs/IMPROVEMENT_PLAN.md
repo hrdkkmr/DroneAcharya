@@ -234,3 +234,25 @@ These are listed in `docs/TESTING.md` once performed or still outstanding.
   - **Shared UI and tutorial:** shared buttons click. The tutorial has step and practice cues with a "Sound cues" toggle.
   - **Narration:** none. The tutorial is text plus cues; voice narration is listed as a later enhancement.
   - **Tests:** new `test_audio.gd` (7 tests). Suite **167/167**.
+- **2026-10-20 — Phases 6 and 7 complete:**
+  - **Integration:**
+    - Full Godot suite **167/167**; Python ML 11/11 and schema 4/4.
+    - Basic-course autopilot 23.9 s.
+    - VIGIL diff against the baseline tag is empty.
+  - **Performance:** `measure_performance.gd` now also measures the five flight missions: 401–498 FPS mean at 1600×900 on an Intel Arc iGPU, scene load ≤ 262 ms, about 82 MB static memory (`TESTING.md` §4).
+  - **Docs:** `ARCHITECTURE.md`, `CONTROLS.md`, `SCENARIOS.md`, `SESSION_AND_REPORTS.md`, `TESTING.md` and the README were written or updated. The two older docs point to the new ones.
+
+## 7. Remaining issues and next steps
+
+1. **Manual checks** (`TESTING.md` §3):
+   - listening to the sounds;
+   - hand-flying every profile in both environments;
+   - a full threat exercise with a real mouse and touchpad;
+   - a real 1366×768 screen.
+2. **Narration:** no voice narration (by design: offline, no TTS). Add recorded, licensed narration with captions if wanted.
+3. **Flight records:** no 3D replay and no import. Threat sessions keep both.
+4. **Stress hitch:** the threat decision tick in the 30-actor stress case (mean 21.7 ms, max 46.5 ms) can hitch once per second; spread the work across ticks.
+5. **Sensor simplifications:**
+   - the flight radar uses ideal association and behaviour-based "hostile" marking;
+   - the hazards are deliberately simple game mechanics.
+6. **Packaging:** still needs the Godot 4.7.2 export templates (unchanged; `DRONEACHARYA_TESTING.md` §7). The Settings screen measures ML latency from a test fixture, which the export excludes, so an exported build shows no latency figure.
